@@ -285,7 +285,7 @@ export default function BugReportForm() {
               </div>
             </CardContent>
 
-            <CardFooter className="flex flex-col sm:flex-row sm:justify-between gap-4 pt-2 pb-6 px-6">
+            <CardFooter className="sticky bottom-16 z-10 flex flex-col gap-4 rounded-b-lg border-t bg-card/95 px-6 pb-6 pt-4 backdrop-blur-sm sm:flex-row sm:justify-between md:bottom-0">
               <Button
                 variant="outline"
                 type="button"
@@ -297,11 +297,7 @@ export default function BugReportForm() {
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className={`w-full sm:w-auto order-1 sm:order-2 ${
-                  formData.severity
-                    ? `bg-${formData.severity === "critical" ? "red" : formData.severity === "high" ? "orange" : formData.severity === "medium" ? "amber" : "green"}-600 hover:bg-${formData.severity === "critical" ? "red" : formData.severity === "high" ? "orange" : formData.severity === "medium" ? "amber" : "green"}-700`
-                    : ""
-                }`}
+                className="order-1 w-full sm:order-2 sm:w-auto"
               >
                 {isSubmitting ? (
                   <>
