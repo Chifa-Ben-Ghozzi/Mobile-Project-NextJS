@@ -5,6 +5,7 @@ import { ThemeProvider } from "next-themes";
 import { useEffect } from "react";
 
 import HelpChatbot from "@/components/HelpChatbot";
+import { InstallAppProvider } from "@/components/InstallAppButton";
 
 function OfflineServiceWorker() {
   useEffect(() => {
@@ -22,9 +23,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <OfflineServiceWorker />
-        {children}
-        <HelpChatbot />
+        <InstallAppProvider>
+          <OfflineServiceWorker />
+          {children}
+          <HelpChatbot />
+        </InstallAppProvider>
       </ThemeProvider>
     </SessionProvider>
   );

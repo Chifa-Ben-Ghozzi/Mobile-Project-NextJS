@@ -1,5 +1,6 @@
 import "./globals.css";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import Script from "next/script";
 
 import { Toaster } from "@/components/ui/sonner";
 
@@ -53,6 +54,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
+        <Script id="capture-pwa-install-prompt" strategy="beforeInteractive">
+          {`window.addEventListener("beforeinstallprompt", (event) => {
+            event.preventDefault();
+            window.__rideShareInstallPrompt = event;
+          });`}
+        </Script>
         <Providers>
           <Toaster closeButton richColors position="top-right" />
           {children}

@@ -28,6 +28,7 @@ import Slider from "react-slick";
 import { Button } from "@/components/ui/button";
 import { useMediaQuery } from "@/hooks/use-media-query";
 
+import { InstallAppButton } from "./InstallAppButton";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "./ui/drawer";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
@@ -243,6 +244,11 @@ export default function WelcomePage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
+      {!showHeader && (
+        <div className="fixed top-4 right-4 z-40">
+          <InstallAppButton />
+        </div>
+      )}
       {/* Enhanced Header */}
       <motion.header
         className="fixed top-4 left-0 right-0 z-50 transition-all duration-300 border rounded-full w-11/12 m-auto shadow-lg bg-background/80 backdrop-blur-md"
@@ -258,7 +264,8 @@ export default function WelcomePage() {
       >
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-primary">RideShare</h1>
-          <nav>
+          <nav className="flex items-center gap-1">
+            <InstallAppButton />
             {status === "authenticated" ? (
               <Button
                 asChild

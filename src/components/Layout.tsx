@@ -22,6 +22,7 @@ import { useState, useEffect } from "react";
 import type React from "react";
 import { toast } from "sonner";
 
+import { InstallAppButton } from "@/components/InstallAppButton";
 import { NotificationPanel } from "@/components/NotificationPanel";
 import { Button } from "@/components/ui/button";
 import { useTutorial, TutorialProvider } from "@/contexts/TutorialContext";
@@ -131,11 +132,13 @@ export default function Layout({ children }: LayoutProps) {
                         </Link>
                       </Button>
                     ))}
+                    <InstallAppButton />
                     <div className="h-6 w-px bg-border mx-2" />
                     <NotificationPanel userId={currentUser.id} />
                   </nav>
                 ) : (
-                  <div>
+                  <div className="flex items-center gap-2">
+                    <InstallAppButton />
                     <NotificationPanel userId={currentUser.id} />
                   </div>
                 )}

@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { useMediaQuery } from "@/hooks/use-media-query";
 
+import { InstallAppButton } from "./InstallAppButton";
 import { Button } from "./ui/button";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "./ui/drawer";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
@@ -28,7 +29,8 @@ export default function LayoutAuth({ children }: LayoutProps) {
             RideShare
           </Link>
           {!isLoggedIn ? (
-            <div>
+            <div className="flex items-center gap-2">
+              <InstallAppButton />
               <Button variant="ghost" asChild className="mr-2">
                 <Link href="/login">Login</Link>
               </Button>
@@ -37,7 +39,8 @@ export default function LayoutAuth({ children }: LayoutProps) {
               </Button>
             </div>
           ) : (
-            <div>
+            <div className="flex items-center gap-2">
+              <InstallAppButton />
               <Button variant="outline" asChild className="mr-2">
                 <Link href="/dashboard">
                   Dashboard
