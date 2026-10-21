@@ -32,10 +32,16 @@ export async function GET(req: NextRequest) {
       .select("*")
       .eq("user_id", userId);
 
-    if (associatedPeopleError) throw associatedPeopleError;
+    if (associatedPeopleError?.code === "PGRST205") {
+      console.warn(
+        "The associated_people table is not installed; returning an empty associated people list."
+      );
+    } else if (associatedPeopleError) {
+      throw associatedPeopleError;
+    }
 
     // Generate response data
-    const responseData = { associatedPeople };
+    const responseData = { associatedPeople: associatedPeople ?? [] };
 
     // Generate ETag for the response data
     const etag = generateETag(responseData);
@@ -61,7 +67,8 @@ export async function GET(req: NextRequest) {
         "Cache-Control": "public, max-age=0, must-revalidate",
       },
     });
-  } catch {
+  } catch (error) {
+    console.error("Failed to load create-ride data:", error);
     return new NextResponse(JSON.stringify({ error: "Internal Server Error" }), {
       status: 500,
       headers: {

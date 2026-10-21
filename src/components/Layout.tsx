@@ -3,6 +3,7 @@
 import {
   Home,
   Car,
+  CarFront,
   Users,
   HelpCircle,
   Shield,
@@ -11,6 +12,7 @@ import {
   Star,
   Code,
   Mail,
+  MessageSquareText,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -101,6 +103,8 @@ export default function Layout({ children }: LayoutProps) {
                     {[
                       { icon: Home, label: "Dashboard", href: "/dashboard" },
                       { icon: Car, label: "Create Ride", href: "/create-ride" },
+                      { icon: CarFront, label: "Offer a Ride", href: "/offer-ride" },
+                      { icon: MessageSquareText, label: "Reclamation", href: "/reclamations" },
                       { icon: Users, label: "Profile", href: "/profile" },
                     ].map((item) => (
                       <Button
@@ -137,6 +141,8 @@ export default function Layout({ children }: LayoutProps) {
                 {[
                   { icon: Home, label: "Dashboard", href: "/dashboard" },
                   { icon: Car, label: "Create Ride", href: "/create-ride" },
+                  { icon: CarFront, label: "Offer a Ride", href: "/offer-ride" },
+                  { icon: MessageSquareText, label: "Reclamation", href: "/reclamations" },
                   { icon: Users, label: "Profile", href: "/profile" },
                 ].map((item) => (
                   <div key={item.label} className="flex-1">

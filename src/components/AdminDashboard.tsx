@@ -12,6 +12,7 @@ import {
   Key,
   LogOut,
   MessageSquareWarning,
+  MessageSquareText,
   Search,
   Send,
   Star,
@@ -26,6 +27,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import BugReportManagement from "@/components/BugReportManagement";
+import ReclamationManagement from "@/components/ReclamationManagement";
 import ReportManagement from "@/components/ReportManagement";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -382,6 +384,10 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
               <MessageSquareWarning className="h-4 w-4" />
               <span className="hidden sm:inline">Reports</span>
             </TabsTrigger>
+            <TabsTrigger value="reclamations" className="flex flex-1 items-center gap-2">
+              <MessageSquareText className="h-4 w-4" />
+              <span className="hidden sm:inline">Reclamations</span>
+            </TabsTrigger>
             <TabsTrigger value="bugs" className="flex flex-1 items-center gap-2">
               <XCircle className="h-4 w-4" />
               <span className="hidden sm:inline">Bugs</span>
@@ -729,6 +735,9 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
           {/* Reports Tab */}
           <TabsContent value="reports">
             <ReportManagement />
+          </TabsContent>
+          <TabsContent value="reclamations">
+            <ReclamationManagement />
           </TabsContent>
 
           {/* Bug Reports Tab */}

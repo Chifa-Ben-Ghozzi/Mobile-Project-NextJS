@@ -84,6 +84,7 @@ import {
 
 import { ContactManager } from "./ContactDialog";
 import ThemeToggleButton from "./ui/theme-toggle-button";
+import { VehicleManager } from "./VehicleManager";
 
 interface ProfilePageProps {
   currentUser: User;
@@ -668,13 +669,16 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
         >
           {isLoading ? (
             <div className="flex flex-nowrap justify-center space-x-2 mb-6 w-full">
-              {[...Array(4)].map((_, i) => (
+              {[...Array(5)].map((_, i) => (
                 <Skeleton key={i} className="h-10 w-24 mb-2 flex-1" />
               ))}
             </div>
           ) : (
-            <TabsList className="grid grid-cols-4 mb-6">
+            <TabsList className="grid grid-cols-2 sm:grid-cols-5 mb-6">
               <TabsTrigger value="profile">Profile</TabsTrigger>
+              <TabsTrigger value="vehicles">
+                <Car className="h-4 w-4 mr-2" /> Cars
+              </TabsTrigger>
               <TabsTrigger value="security" data-tutorial="security-tab">
                 Security
               </TabsTrigger>
@@ -878,6 +882,10 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                 </Card>
               </>
             )}
+          </TabsContent>
+
+          <TabsContent value="vehicles" className="space-y-6">
+            <VehicleManager />
           </TabsContent>
 
           {/* Security Tab */}

@@ -13,6 +13,7 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
 import { supabase } from "@/lib/db";
+import { normalizeRideStatus } from "@/lib/rideStatus";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -61,7 +62,13 @@ export async function GET(req: NextRequest) {
 
     // Apply status filter
     if (status && status !== "all") {
-      query = query.eq("status", status);
+      if (status === "pending") {
+        query = query.or("status.eq.pending,and(status.eq.available,accepter_id.is.null)");
+      } else if (status === "accepted") {
+        query = query.or("status.eq.accepted,and(status.eq.available,accepter_id.not.is.null)");
+      } else {
+        query = query.eq("status", status);
+      }
     }
 
     // Apply date filters
@@ -120,7 +127,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(
       {
-        rides,
+        rides: rides.map(normalizeRideStatus),
         total: totalCount,
         page: safePageNumber,
         totalPages,

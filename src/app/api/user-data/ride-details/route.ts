@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { getUserContacts } from "@/lib/contactService";
 import { supabase } from "@/lib/db";
+import { normalizeRideStatus } from "@/lib/rideStatus";
 import { generateETag, isETagMatch } from "@/utils/etag";
 
 export const dynamic = "force-dynamic";
@@ -108,67 +109,40 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Check permissions based on the requirements
-    // 1. If the user is the requester, they can always see the ride
-    if (ride.requester_id === userId) {
-      // Requester can always see their own rides
-    }
-    // 2. If the ride is pending, only accepted contacts of the requester can see it
-    else if (ride.status === "pending") {
-      // Check if the user is an accepted contact of the requester
-      const isAcceptedContactOfRequester = contacts.some(
-        (contact) =>
-          (contact.user_id === ride.requester_id &&
-            contact.contact_id === userId &&
-            contact.status === "accepted") ||
-          (contact.user_id === userId &&
-            contact.contact_id === ride.requester_id &&
-            contact.status === "accepted")
+    const isOpenRide =
+      ride.status === "pending" || (ride.status === "available" && !ride.accepter_id);
+    const isParticipant = ride.requester_id === userId || ride.accepter_id === userId;
+    if (!isOpenRide && !isParticipant) {
+      return new NextResponse(
+        JSON.stringify({
+          error: "permission_denied",
+          message: "You do not have permission to view this ride",
+        }),
+        {
+          status: 403,
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+            Pragma: "no-cache",
+            Expires: "0",
+            "Surrogate-Control": "no-store",
+          },
+        }
       );
+    }
 
-      if (!isAcceptedContactOfRequester) {
-        return new NextResponse(
-          JSON.stringify({
-            error: "permission_denied",
-            message: "You do not have permission to view this ride",
-          }),
-          {
-            status: 403,
-            headers: {
-              "Content-Type": "application/json",
-              "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-              Pragma: "no-cache",
-              Expires: "0",
-              "Surrogate-Control": "no-store",
-            },
-          }
-        );
-      }
-    }
-    // 3. If the ride is accepted/cancelled/completed, only the requester and accepter can see it
-    else if (["accepted", "cancelled", "completed"].includes(ride.status)) {
-      if (ride.requester_id !== userId && ride.accepter_id !== userId) {
-        return new NextResponse(
-          JSON.stringify({
-            error: "permission_denied",
-            message: "You do not have permission to view this ride",
-          }),
-          {
-            status: 403,
-            headers: {
-              "Content-Type": "application/json",
-              "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-              Pragma: "no-cache",
-              Expires: "0",
-              "Surrogate-Control": "no-store",
-            },
-          }
-        );
-      }
-    }
+    const { data: requester, error: requesterError } = await supabase
+      .from("users")
+      .select("name")
+      .eq("id", ride.requester_id)
+      .maybeSingle();
+    if (requesterError) throw requesterError;
 
     // Generate response data
-    const responseData = { ride, contacts };
+    const responseData = {
+      ride: normalizeRideStatus({ ...ride, requester_name: requester?.name }),
+      contacts,
+    };
 
     // Generate ETag for the response data
     const etag = generateETag(responseData);
@@ -194,7 +168,8 @@ export async function GET(req: NextRequest) {
         "Cache-Control": "public, max-age=0, must-revalidate",
       },
     });
-  } catch {
+  } catch (error) {
+    console.error("Ride details fetch failed:", error);
     return new NextResponse(
       JSON.stringify({
         error: "server_error",

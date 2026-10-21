@@ -3,25 +3,23 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error("Missing Supabase environment variables");
-}
-
 let supabaseInstance: SupabaseClient | null = null;
 
 export function getSupabaseClient(): SupabaseClient {
   if (supabaseInstance === null) {
-    try {
-      supabaseInstance = createClient(supabaseUrl as string, supabaseKey as string, {
-        auth: {
-          autoRefreshToken: true,
-          persistSession: true,
-          detectSessionInUrl: true,
-        },
-      });
-    } catch {
-      throw new Error("Failed to create Supabase client");
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error(
+        "Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY."
+      );
     }
+
+    supabaseInstance = createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+        detectSessionInUrl: false,
+      },
+    });
   }
   return supabaseInstance;
 }

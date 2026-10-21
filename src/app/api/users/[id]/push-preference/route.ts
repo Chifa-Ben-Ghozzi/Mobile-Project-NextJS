@@ -66,7 +66,8 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
         },
       }
     );
-  } catch {
+  } catch (error) {
+    console.error(`Failed to load push preference for user ${id}:`, error);
     return NextResponse.json(
       { error: "Internal server error" },
       {
@@ -116,7 +117,8 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
     }
 
     return NextResponse.json({ success: true, data: data[0] });
-  } catch {
+  } catch (error) {
+    console.error(`Failed to update push preference for user ${id}:`, error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

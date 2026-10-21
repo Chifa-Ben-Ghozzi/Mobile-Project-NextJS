@@ -46,7 +46,8 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
         },
       }
     );
-  } catch {
+  } catch (error) {
+    console.error(`Failed to load push devices for user ${id}:`, error);
     return NextResponse.json(
       { error: "Internal server error" },
       {

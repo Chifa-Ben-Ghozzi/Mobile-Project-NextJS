@@ -1,4 +1,15 @@
-import type { User, RideData, Contact, AssociatedPerson, Note, BugReportFormData } from "../types";
+import type {
+  User,
+  RideData,
+  Contact,
+  AssociatedPerson,
+  Note,
+  BugReportFormData,
+  Vehicle,
+  VehicleInput,
+  DriverOffer,
+  DriverOfferInput,
+} from "../types";
 
 export const createRide = async (rideData: RideData) => {
   const response = await fetch("/api/rides", {
@@ -16,12 +27,13 @@ export const createRide = async (rideData: RideData) => {
   }
 };
 
-export const acceptRide = async (rideId: string) => {
+export const acceptRide = async (rideId: string, vehicleId: string) => {
   const response = await fetch(`/api/rides/${rideId}/accept`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
+    body: JSON.stringify({ vehicle_id: vehicleId }),
   });
   if (response.ok) {
     return await response.json();
@@ -29,6 +41,91 @@ export const acceptRide = async (rideId: string) => {
     const errorData = await response.json();
     throw new Error(errorData.error || "Failed to accept ride. Please try again.");
   }
+};
+
+async function readVehicleResponse(response: Response) {
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || "Vehicle operation failed.");
+  return data;
+}
+
+export const fetchVehicles = async (): Promise<Vehicle[]> => {
+  const data = await readVehicleResponse(await fetch("/api/vehicles", { cache: "no-store" }));
+  return data.vehicles;
+};
+
+export const createVehicle = async (vehicle: VehicleInput): Promise<Vehicle> => {
+  const data = await readVehicleResponse(
+    await fetch("/api/vehicles", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(vehicle),
+    })
+  );
+  return data.vehicle;
+};
+
+export const updateVehicle = async (id: string, vehicle: VehicleInput): Promise<Vehicle> => {
+  const data = await readVehicleResponse(
+    await fetch(`/api/vehicles/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(vehicle),
+    })
+  );
+  return data.vehicle;
+};
+
+export const deleteVehicle = async (id: string): Promise<void> => {
+  await readVehicleResponse(
+    await fetch(`/api/vehicles/${id}`, {
+      method: "DELETE",
+    })
+  );
+};
+
+async function readDriverOfferResponse(response: Response) {
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || "Ride offer operation failed.");
+  return data;
+}
+
+export const fetchDriverOffers = async (): Promise<DriverOffer[]> => {
+  const data = await readDriverOfferResponse(
+    await fetch("/api/driver-offers", { cache: "no-store" })
+  );
+  return data.offers;
+};
+
+export const createDriverOffer = async (offer: DriverOfferInput): Promise<DriverOffer> => {
+  const data = await readDriverOfferResponse(
+    await fetch("/api/driver-offers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(offer),
+    })
+  );
+  return data.offer;
+};
+
+export const updateDriverOffer = async (
+  id: string,
+  offer: DriverOfferInput
+): Promise<DriverOffer> => {
+  const data = await readDriverOfferResponse(
+    await fetch(`/api/driver-offers/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(offer),
+    })
+  );
+  return data.offer;
+};
+
+export const deleteDriverOffer = async (id: string): Promise<void> => {
+  await readDriverOfferResponse(
+    await fetch(`/api/driver-offers/${id}`, { method: "DELETE" })
+  );
 };
 
 export const cancelRequest = async (rideId: string) => {
@@ -43,6 +140,14 @@ export const cancelRequest = async (rideId: string) => {
   } else {
     const errorData = await response.json();
     throw new Error(errorData.error || "Failed to cancel request. Please try again.");
+  }
+};
+
+export const deleteRideAnnouncement = async (rideId: string): Promise<void> => {
+  const response = await fetch(`/api/rides/${rideId}`, { method: "DELETE" });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || "Failed to delete ride announcement.");
   }
 };
 
@@ -296,30 +401,25 @@ export const fetchUserStats = async (
 };
 
 // Replace the fetchDashboardData function with this implementation
+
 export const fetchDashboardData = async () => {
-  try {
-    const response = await fetch(`/api/user-data/dashboard`, {
-      cache: "no-cache", // Ensures we always make a request to the server
-      headers: {
-        "Cache-Control": "max-age=0",
-      },
-    });
+  const response = await fetch("/api/user-data/dashboard", {
+    cache: "no-store",
+  });
 
-    if (response.status === 304) {
-      // Content hasn't changed, browser will use its cached data
-      return null;
-    }
+  if (!response.ok) {
+    const errorBody = await response.text();
 
-    if (!response.ok) {
-      throw new Error("Failed to fetch dashboard data");
-    }
+    console.error(`Dashboard API error (${response.status}): ${errorBody}`);
 
-    return await response.json();
-  } catch (error) {
-    console.error("Error fetching dashboard data:", error);
-    throw error;
+    throw new Error(
+      `Failed to fetch dashboard data (${response.status}). Check the server terminal.`
+    );
   }
+
+  return await response.json();
 };
+
 
 // Replace the fetchProfileData function with this implementation
 export const fetchProfileData = async () => {

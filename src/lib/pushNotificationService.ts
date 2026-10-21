@@ -48,7 +48,8 @@ export async function sendImmediateNotification(userId: string, title: string, b
 
     await Promise.all(
       subscriptionData.map(async (sub) => {
-        const subscription = JSON.parse(sub.subscription);
+        const subscription =
+          typeof sub.subscription === "string" ? JSON.parse(sub.subscription) : sub.subscription;
         const success = await sendPushNotification(subscription, payload);
         if (!success) {
           expiredSubscriptions.push(sub.id);

@@ -11,13 +11,19 @@ export async function POST(request: Request) {
     // Get the contact details
     const { data: contact, error: contactError } = await supabase
       .from("contacts")
-      .select(
-        "*, user:users!contacts_user_id_fkey(name), contact:users!contacts_contact_id_fkey(name)"
-      )
+      .select("*")
       .eq("id", contactId)
       .single();
 
     if (contactError) throw contactError;
+
+    const { data: contactUser, error: contactUserError } = await supabase
+      .from("users")
+      .select("name")
+      .eq("id", contact.contact_id)
+      .single();
+
+    if (contactUserError) throw contactUserError;
 
     // Update the contact status
     const { data: updatedContact, error: updateError } = await supabase
@@ -33,13 +39,13 @@ export async function POST(request: Request) {
     await sendImmediateNotification(
       contact.user_id,
       "Contact Request Accepted",
-      `${contact.contact.name} has accepted your contact request`
+      `${contactUser.name} has accepted your contact request`
     );
 
     // Create a notification in the database
     const { error: notificationError } = await supabase.from("notifications").insert({
       user_id: contact.user_id,
-      message: `${contact.contact.name} has accepted your contact request`,
+      message: `${contactUser.name} has accepted your contact request`,
       type: "contactAccepted",
       related_id: contactId,
     });

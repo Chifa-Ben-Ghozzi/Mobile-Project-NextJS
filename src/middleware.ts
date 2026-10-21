@@ -39,8 +39,10 @@ const adminRoutes = [
   "/api/admin/users",
   "/api/admin/notify-all",
   "/api/admin/notify-user",
+  "/api/admin/generate-reset-link",
   "/api/admin/bug-reports",
   "/api/admin/reports",
+  "/api/admin/reclamations",
   "/api/admin/reviews",
 ];
 

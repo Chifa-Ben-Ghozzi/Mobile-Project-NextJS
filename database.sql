@@ -1,5 +1,213 @@
-create table public.associated_people (
-  id uuid not null default extensions.uuid_generate_v4 (),
+CREATE EXTENSION IF NOT EXISTS unaccent WITH SCHEMA extensions;
+
+create table IF NOT EXISTS public.users (
+  id uuid not null default gen_random_uuid (),
+  name character varying(255) not null,
+  email character varying(255) not null,
+  phone character varying(20) not null,
+  password character varying(255) not null,
+  created_at timestamp with time zone null default CURRENT_TIMESTAMP,
+  push_enabled boolean null default true,
+  is_verified boolean null default false,
+  constraint users_pkey primary key (id),
+  constraint users_email_key unique (email)
+) TABLESPACE pg_default;
+
+create index IF not exists idx_users_phone on public.users using btree (phone) TABLESPACE pg_default;
+
+create table IF NOT EXISTS public.rides (
+  id uuid not null default gen_random_uuid (),
+  from_location character varying(255) not null,
+  to_location character varying(255) not null,
+  time timestamp with time zone not null,
+  requester_id uuid not null,
+  accepter_id uuid null,
+  status text not null,
+  rider_name character varying(255) not null,
+  rider_phone character varying(20) null,
+  note text null,
+  passenger_count integer not null default 1,
+  max_price numeric(10, 2) null,
+  luggage_count integer null,
+  pet_preference text not null default 'any',
+  smoking_preference text not null default 'any',
+  accessibility_needs text null,
+  vehicle_type text not null default 'any',
+  gender_preference text not null default 'any',
+  created_at timestamp with time zone null default CURRENT_TIMESTAMP,
+  from_lat numeric(10, 8) not null,
+  from_lon numeric(11, 8) not null,
+  to_lat numeric(10, 8) not null,
+  to_lon numeric(11, 8) not null,
+  is_edited boolean null default false,
+  constraint rides_pkey primary key (id),
+  constraint rides_accepter_id_fkey foreign KEY (accepter_id) references users (id) on delete set null,
+  constraint rides_requester_id_fkey foreign KEY (requester_id) references users (id) on delete CASCADE,
+  constraint status_check check (
+    status = any (
+      array[
+        'pending'::text,
+        'accepted'::text,
+        'cancelled'::text,
+        'completed'::text
+      ]
+    )
+  )
+) TABLESPACE pg_default;
+
+create index IF not exists idx_rides_accepter_id on public.rides using btree (accepter_id) TABLESPACE pg_default;
+create index IF not exists idx_rides_requester_id on public.rides using btree (requester_id) TABLESPACE pg_default;
+
+ALTER TABLE public.rides
+  ADD COLUMN IF NOT EXISTS passenger_count integer NOT NULL DEFAULT 1,
+  ADD COLUMN IF NOT EXISTS max_price numeric(10, 2),
+  ADD COLUMN IF NOT EXISTS luggage_count integer,
+  ADD COLUMN IF NOT EXISTS pet_preference text NOT NULL DEFAULT 'any',
+  ADD COLUMN IF NOT EXISTS smoking_preference text NOT NULL DEFAULT 'any',
+  ADD COLUMN IF NOT EXISTS accessibility_needs text,
+  ADD COLUMN IF NOT EXISTS vehicle_type text NOT NULL DEFAULT 'any',
+  ADD COLUMN IF NOT EXISTS gender_preference text NOT NULL DEFAULT 'any';
+
+CREATE TABLE IF NOT EXISTS public.vehicles (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  make_model text NOT NULL,
+  year integer,
+  color text,
+  seats integer NOT NULL DEFAULT 4,
+  vehicle_type text NOT NULL,
+  pet_policy text NOT NULL DEFAULT 'not_allowed',
+  smoking_policy text NOT NULL DEFAULT 'non_smoking',
+  accessibility_features text,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT vehicles_seats_check CHECK (seats BETWEEN 1 AND 20),
+  CONSTRAINT vehicles_type_check CHECK (vehicle_type IN ('sedan', 'suv', 'van')),
+  CONSTRAINT vehicles_pet_policy_check CHECK (pet_policy IN ('allowed', 'not_allowed')),
+  CONSTRAINT vehicles_smoking_policy_check CHECK (
+    smoking_policy IN ('non_smoking', 'smoking_allowed')
+  )
+);
+
+CREATE INDEX IF NOT EXISTS idx_vehicles_user_id ON public.vehicles(user_id);
+
+CREATE TABLE IF NOT EXISTS public.driver_offers (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  driver_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  vehicle_id uuid REFERENCES public.vehicles(id) ON DELETE SET NULL,
+  vehicle_snapshot jsonb NOT NULL,
+  from_location text NOT NULL,
+  to_location text NOT NULL,
+  departure_time timestamptz NOT NULL,
+  offered_price numeric(10, 2) NOT NULL CHECK (offered_price >= 0),
+  available_places integer NOT NULL CHECK (available_places BETWEEN 1 AND 20),
+  pickup_details text,
+  message text,
+  status text NOT NULL DEFAULT 'active'
+    CHECK (status IN ('active', 'cancelled', 'completed')),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_driver_offers_status_departure
+  ON public.driver_offers(status, departure_time);
+CREATE INDEX IF NOT EXISTS idx_driver_offers_driver_id
+  ON public.driver_offers(driver_id);
+
+ALTER TABLE public.rides
+  ADD COLUMN IF NOT EXISTS offered_vehicle jsonb;
+
+DO $$
+DECLARE
+  legacy_column text;
+BEGIN
+  FOREACH legacy_column IN ARRAY ARRAY[
+    'driver_id',
+    'origin',
+    'destination',
+    'departure_time',
+    'available_seats',
+    'price_per_seat'
+  ]
+  LOOP
+    IF EXISTS (
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'rides'
+        AND column_name = legacy_column
+    ) THEN
+      EXECUTE format('ALTER TABLE public.rides ALTER COLUMN %I DROP NOT NULL', legacy_column);
+    END IF;
+  END LOOP;
+END;
+$$;
+
+DO $$
+DECLARE
+  status_constraint record;
+BEGIN
+  FOR status_constraint IN
+    SELECT conname
+    FROM pg_constraint
+    WHERE conrelid = 'public.rides'::regclass
+      AND contype = 'c'
+      AND pg_get_constraintdef(oid) ILIKE '%status%'
+  LOOP
+    EXECUTE format('ALTER TABLE public.rides DROP CONSTRAINT %I', status_constraint.conname);
+  END LOOP;
+
+  UPDATE public.rides
+  SET status = 'pending'
+  WHERE status = 'available';
+
+  ALTER TABLE public.rides
+    ADD CONSTRAINT rides_status_check
+    CHECK (status IN ('pending', 'accepted', 'cancelled', 'completed'));
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.set_notification_link()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+  IF NEW.link IS NULL THEN
+    NEW.link := CASE
+      WHEN NEW.type IN ('newNote', 'rideAccepted', 'rideCancelled', 'rideCompleted') AND NEW.related_id IS NOT NULL
+        THEN '/rides/' || NEW.related_id
+      WHEN NEW.type IN ('contactRequest', 'contactAccepted')
+        THEN '/profile?tab=contacts'
+      WHEN NEW.type = 'newRide'
+        THEN '/dashboard'
+      ELSE NULL
+    END;
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.update_updated_at_column()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+   NEW.updated_at = now();
+   RETURN NEW;
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION public.update_bug_reports_updated_at()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$function$;
+
+create table IF NOT EXISTS public.associated_people (
+  id uuid not null default gen_random_uuid (),
   user_id uuid not null,
   name character varying(255) not null,
   relationship character varying(100) not null,
@@ -10,8 +218,8 @@ create table public.associated_people (
 
 create index IF not exists idx_associated_people_user_id on public.associated_people using btree (user_id) TABLESPACE pg_default;
 
-create table public.bug_reports (
-  id uuid not null default extensions.uuid_generate_v4 (),
+create table IF NOT EXISTS public.bug_reports (
+  id uuid not null default gen_random_uuid (),
   user_id uuid null,
   title character varying(255) not null,
   description text not null,
@@ -55,12 +263,13 @@ create index IF not exists bug_reports_status_idx on public.bug_reports using bt
 
 create index IF not exists bug_reports_user_id_idx on public.bug_reports using btree (user_id) TABLESPACE pg_default;
 
+drop trigger IF exists update_bug_reports_updated_at on public.bug_reports;
 create trigger update_bug_reports_updated_at BEFORE
 update on bug_reports for EACH row
 execute FUNCTION update_bug_reports_updated_at ();
 
-create table public.contacts (
-  id uuid not null default extensions.uuid_generate_v4 (),
+create table IF NOT EXISTS public.contacts (
+  id uuid not null default gen_random_uuid (),
   user_id uuid not null,
   contact_id uuid not null,
   status character varying(20) not null,
@@ -87,8 +296,8 @@ create index IF not exists idx_contacts_contact_id on public.contacts using btre
 
 create index IF not exists idx_contacts_user_id on public.contacts using btree (user_id) TABLESPACE pg_default;
 
-create table public.email_verification_tokens (
-  id uuid not null default extensions.uuid_generate_v4 (),
+create table IF NOT EXISTS public.email_verification_tokens (
+  id uuid not null default gen_random_uuid (),
   user_id uuid not null,
   token character varying(255) not null,
   created_at timestamp with time zone null default CURRENT_TIMESTAMP,
@@ -98,8 +307,8 @@ create table public.email_verification_tokens (
   constraint email_verification_tokens_user_id_fkey foreign KEY (user_id) references users (id) on delete CASCADE
 ) TABLESPACE pg_default;
 
-create table public.notifications (
-  id uuid not null default extensions.uuid_generate_v4 (),
+create table IF NOT EXISTS public.notifications (
+  id uuid not null default gen_random_uuid (),
   user_id uuid not null,
   message text not null,
   type character varying(50) not null,
@@ -115,11 +324,12 @@ create index IF not exists idx_notifications_related_id on public.notifications 
 
 create index IF not exists idx_notifications_user_id on public.notifications using btree (user_id) TABLESPACE pg_default;
 
-create trigger set_notification_link_trigger BEFORE INSERT on notifications for EACH row
+drop trigger IF exists set_notification_link_trigger on public.notifications;
+create trigger set_notification_link_trigger BEFORE INSERT on public.notifications for EACH row
 execute FUNCTION set_notification_link ();
 
-create table public.password_reset_tokens (
-  id uuid not null default extensions.uuid_generate_v4 (),
+create table IF NOT EXISTS public.password_reset_tokens (
+  id uuid not null default gen_random_uuid (),
   user_id uuid not null,
   token character varying(255) not null,
   expires_at timestamp with time zone not null,
@@ -136,11 +346,12 @@ create index IF not exists idx_password_reset_tokens_token on public.password_re
 
 create index IF not exists idx_password_reset_tokens_user_id on public.password_reset_tokens using btree (user_id) TABLESPACE pg_default;
 
+drop trigger IF exists update_password_reset_tokens_updated_at on public.password_reset_tokens;
 create trigger update_password_reset_tokens_updated_at BEFORE
 update on password_reset_tokens for EACH row
 execute FUNCTION update_updated_at_column ();
 
-create table public.push_subscriptions (
+create table IF NOT EXISTS public.push_subscriptions (
   id uuid not null default gen_random_uuid (),
   user_id uuid not null,
   subscription jsonb not null,
@@ -160,8 +371,8 @@ create index IF not exists idx_push_subscriptions_last_used on public.push_subsc
 
 create index IF not exists idx_push_subscriptions_user_id on public.push_subscriptions using btree (user_id) TABLESPACE pg_default;
 
-create table public.reports (
-  id uuid not null default extensions.uuid_generate_v4 (),
+create table IF NOT EXISTS public.reports (
+  id uuid not null default gen_random_uuid (),
   reporter_id uuid not null,
   reported_id uuid not null,
   reason text not null,
@@ -186,8 +397,32 @@ create index IF not exists idx_reports_ride_id on public.reports using btree (ri
 
 create index IF not exists idx_reports_status on public.reports using btree (status) TABLESPACE pg_default;
 
-create table public.reviews (
-  id uuid not null default extensions.uuid_generate_v4 (),
+CREATE TABLE IF NOT EXISTS public.reclamations (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  category text NOT NULL CHECK (
+    category IN ('ride_service', 'safety', 'conduct', 'account', 'payment', 'other')
+  ),
+  subject text NOT NULL CHECK (char_length(subject) BETWEEN 5 AND 120),
+  description text NOT NULL CHECK (char_length(description) BETWEEN 10 AND 5000),
+  ride_id uuid REFERENCES public.rides(id) ON DELETE SET NULL,
+  status text NOT NULL DEFAULT 'pending' CHECK (
+    status IN ('pending', 'in_review', 'resolved', 'rejected')
+  ),
+  admin_notes text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_reclamations_user_id
+  ON public.reclamations(user_id);
+CREATE INDEX IF NOT EXISTS idx_reclamations_status
+  ON public.reclamations(status);
+CREATE INDEX IF NOT EXISTS idx_reclamations_created_at
+  ON public.reclamations(created_at DESC);
+
+create table IF NOT EXISTS public.reviews (
+  id uuid not null default gen_random_uuid (),
   user_id uuid not null,
   review text not null,
   rating integer not null,
@@ -210,8 +445,8 @@ create index IF not exists idx_reviews_is_approved on public.reviews using btree
 
 create index IF not exists idx_reviews_user_id on public.reviews using btree (user_id) TABLESPACE pg_default;
 
-create table public.ride_notes (
-  id uuid not null default extensions.uuid_generate_v4 (),
+create table IF NOT EXISTS public.ride_notes (
+  id uuid not null default gen_random_uuid (),
   ride_id uuid not null,
   user_id uuid not null,
   note text not null,
@@ -225,81 +460,6 @@ create table public.ride_notes (
 ) TABLESPACE pg_default;
 
 create index IF not exists idx_ride_notes_ride_id on public.ride_notes using btree (ride_id) TABLESPACE pg_default;
-
-create table public.rides (
-  id uuid not null default extensions.uuid_generate_v4 (),
-  from_location character varying(255) not null,
-  to_location character varying(255) not null,
-  time timestamp with time zone not null,
-  requester_id uuid not null,
-  accepter_id uuid null,
-  status text not null,
-  rider_name character varying(255) not null,
-  rider_phone character varying(20) null,
-  note text null,
-  created_at timestamp with time zone null default CURRENT_TIMESTAMP,
-  from_lat numeric(10, 8) not null,
-  from_lon numeric(11, 8) not null,
-  to_lat numeric(10, 8) not null,
-  to_lon numeric(11, 8) not null,
-  is_edited boolean null default false,
-  constraint rides_pkey primary key (id),
-  constraint rides_accepter_id_fkey foreign KEY (accepter_id) references users (id) on delete set null,
-  constraint rides_requester_id_fkey foreign KEY (requester_id) references users (id) on delete CASCADE,
-  constraint status_check check (
-    (
-      status = any (
-        array[
-          'pending'::text,
-          'accepted'::text,
-          'cancelled'::text,
-          'completed'::text
-        ]
-      )
-    )
-  )
-) TABLESPACE pg_default;
-
-create index IF not exists idx_rides_accepter_id on public.rides using btree (accepter_id) TABLESPACE pg_default;
-
-create index IF not exists idx_rides_requester_id on public.rides using btree (requester_id) TABLESPACE pg_default;
-
-
-create table public.users (
-  id uuid not null default extensions.uuid_generate_v4 (),
-  name character varying(255) not null,
-  email character varying(255) not null,
-  phone character varying(20) null,
-  password character varying(255) not null,
-  created_at timestamp with time zone null default CURRENT_TIMESTAMP,
-  push_enabled boolean null default true,
-  is_verified boolean null default false,
-  constraint users_pkey primary key (id),
-  constraint users_email_key unique (email)
-) TABLESPACE pg_default;
-
-create index IF not exists idx_users_phone on public.users using btree (phone) TABLESPACE pg_default;
-
-
-CREATE OR REPLACE FUNCTION public.set_notification_link()
- RETURNS trigger
- LANGUAGE plpgsql
-AS $function$
-BEGIN
-  IF NEW.link IS NULL THEN
-    NEW.link := CASE
-      WHEN NEW.type IN ('newNote', 'rideAccepted', 'rideCancelled', 'rideCompleted') AND NEW.related_id IS NOT NULL 
-        THEN '/rides/' || NEW.related_id
-      WHEN NEW.type IN ('contactRequest', 'contactAccepted') 
-        THEN '/profile?tab=contacts'
-      WHEN NEW.type = 'newRide' 
-        THEN '/dashboard'
-      ELSE NULL
-    END;
-  END IF;
-  RETURN NEW;
-END;
-$function$
 
 CREATE OR REPLACE FUNCTION public.search_users_with_unaccent(search_query text, current_user_id uuid, limit_count integer)
  RETURNS TABLE(id uuid, name character varying, phone character varying)
@@ -318,27 +478,6 @@ BEGIN
   LIMIT limit_count;
 END;
 $function$
-
-CREATE OR REPLACE FUNCTION public.update_updated_at_column()
- RETURNS trigger
- LANGUAGE plpgsql
-AS $function$
-BEGIN
-   NEW.updated_at = now();
-   RETURN NEW;
-END;
-$function$
-
-CREATE OR REPLACE FUNCTION public.update_bug_reports_updated_at()
- RETURNS trigger
- LANGUAGE plpgsql
-AS $function$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$function$
-
 
 CREATE OR REPLACE FUNCTION public.count_reports_by_type()
  RETURNS TABLE(report_type text, count bigint)

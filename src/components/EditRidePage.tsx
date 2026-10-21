@@ -2,7 +2,16 @@
 
 import { motion } from "framer-motion";
 import { parsePhoneNumber } from "libphonenumber-js";
-import { Loader, MapPin, Clock, UserIcon, FileText, ArrowRight, X } from "lucide-react";
+import {
+  Loader,
+  MapPin,
+  Clock,
+  UserIcon,
+  FileText,
+  ArrowRight,
+  X,
+  SlidersHorizontal,
+} from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
@@ -22,6 +31,13 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -55,7 +71,17 @@ export default function EditRidePage({ rideId }: EditRidePageProps) {
         }
 
         const data = await fetchEditRideData(rideId);
-        setRideData(data.ride);
+        setRideData({
+          ...data.ride,
+          passenger_count: data.ride.passenger_count ?? 1,
+          max_price: data.ride.max_price ?? null,
+          luggage_count: data.ride.luggage_count ?? null,
+          pet_preference: data.ride.pet_preference ?? "any",
+          smoking_preference: data.ride.smoking_preference ?? "any",
+          accessibility_needs: data.ride.accessibility_needs ?? null,
+          vehicle_type: data.ride.vehicle_type ?? "any",
+          gender_preference: data.ride.gender_preference ?? "any",
+        });
       } catch {
         if (!silent) {
           toast.error("Failed to fetch ride details. Please try again.");
@@ -113,6 +139,7 @@ export default function EditRidePage({ rideId }: EditRidePageProps) {
   const steps = [
     { title: "Location", icon: MapPin },
     { title: "Time", icon: Clock },
+    { title: "Criteria", icon: SlidersHorizontal },
     { title: "Rider", icon: UserIcon },
     { title: "Details", icon: FileText },
   ];
@@ -160,6 +187,15 @@ export default function EditRidePage({ rideId }: EditRidePageProps) {
           );
         case 2:
           return (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          );
+        case 3:
+          return (
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="rider_name">Rider Name</Label>
@@ -171,7 +207,7 @@ export default function EditRidePage({ rideId }: EditRidePageProps) {
               </div>
             </div>
           );
-        case 3:
+        case 4:
           return (
             <div className="space-y-4">
               <div className="space-y-2">
@@ -234,6 +270,143 @@ export default function EditRidePage({ rideId }: EditRidePageProps) {
       case 2:
         return (
           <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="passenger_count">Passengers</Label>
+                <Input
+                  id="passenger_count"
+                  type="number"
+                  min={1}
+                  value={rideData.passenger_count}
+                  onChange={(e) =>
+                    setRideData((prev) =>
+                      prev ? { ...prev, passenger_count: Number(e.target.value) } : null
+                    )
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="max_price">Maximum price per passenger</Label>
+                <Input
+                  id="max_price"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={rideData.max_price ?? ""}
+                  onChange={(e) =>
+                    setRideData((prev) =>
+                      prev
+                        ? { ...prev, max_price: e.target.value ? Number(e.target.value) : null }
+                        : null
+                    )
+                  }
+                  placeholder="No limit"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="luggage_count">Luggage pieces</Label>
+                <Input
+                  id="luggage_count"
+                  type="number"
+                  min={0}
+                  max={20}
+                  value={rideData.luggage_count ?? ""}
+                  onChange={(e) =>
+                    setRideData((prev) =>
+                      prev
+                        ? { ...prev, luggage_count: e.target.value ? Number(e.target.value) : null }
+                        : null
+                    )
+                  }
+                  placeholder="No preference"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Vehicle type</Label>
+                <Select
+                  value={rideData.vehicle_type}
+                  onValueChange={(value: RideData["vehicle_type"]) =>
+                    setRideData((prev) => (prev ? { ...prev, vehicle_type: value } : null))
+                  }
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="any">No preference</SelectItem>
+                    <SelectItem value="sedan">Sedan</SelectItem>
+                    <SelectItem value="suv">SUV</SelectItem>
+                    <SelectItem value="van">Van</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Pets</Label>
+                <Select
+                  value={rideData.pet_preference}
+                  onValueChange={(value: RideData["pet_preference"]) =>
+                    setRideData((prev) => (prev ? { ...prev, pet_preference: value } : null))
+                  }
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="any">No preference</SelectItem>
+                    <SelectItem value="pets_allowed">Pets must be allowed</SelectItem>
+                    <SelectItem value="no_pets">No pets in vehicle</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Smoking</Label>
+                <Select
+                  value={rideData.smoking_preference}
+                  onValueChange={(value: RideData["smoking_preference"]) =>
+                    setRideData((prev) => (prev ? { ...prev, smoking_preference: value } : null))
+                  }
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="any">No preference</SelectItem>
+                    <SelectItem value="non_smoking">Non-smoking vehicle</SelectItem>
+                    <SelectItem value="smoking_allowed">Smoking allowed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Driver gender preference</Label>
+                <Select
+                  value={rideData.gender_preference}
+                  onValueChange={(value: RideData["gender_preference"]) =>
+                    setRideData((prev) => (prev ? { ...prev, gender_preference: value } : null))
+                  }
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="any">No preference</SelectItem>
+                    <SelectItem value="female">Woman driver</SelectItem>
+                    <SelectItem value="male">Man driver</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="accessibility_needs">Accessibility needs (optional)</Label>
+              <Textarea
+                id="accessibility_needs"
+                maxLength={500}
+                value={rideData.accessibility_needs || ""}
+                onChange={(e) =>
+                  setRideData((prev) =>
+                    prev ? { ...prev, accessibility_needs: e.target.value || null } : null
+                  )
+                }
+                placeholder="Describe any accessibility requirements"
+                rows={3}
+              />
+            </div>
+          </div>
+        );
+      case 3:
+        return (
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="rider_name">Rider Name</Label>
               <Input
@@ -264,7 +437,7 @@ export default function EditRidePage({ rideId }: EditRidePageProps) {
             </div>
           </div>
         );
-      case 3:
+      case 4:
         return (
           <div className="space-y-4">
             <div className="space-y-2">

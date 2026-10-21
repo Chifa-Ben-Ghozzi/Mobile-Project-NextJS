@@ -21,13 +21,67 @@ export type Ride = {
   rider_phone: string | null;
   note: string | null;
   is_edited: boolean;
+  passenger_count: number;
+  max_price: number | null;
+  luggage_count: number | null;
+  pet_preference: "any" | "pets_allowed" | "no_pets";
+  smoking_preference: "any" | "non_smoking" | "smoking_allowed";
+  accessibility_needs: string | null;
+  vehicle_type: "any" | "sedan" | "suv" | "van";
+  gender_preference: "any" | "female" | "male";
+  requester_name?: string;
+  offered_vehicle?: VehicleSnapshot | null;
+};
+
+export type VehicleType = "sedan" | "suv" | "van";
+export type VehiclePetPolicy = "allowed" | "not_allowed";
+export type VehicleSmokingPolicy = "non_smoking" | "smoking_allowed";
+
+export type Vehicle = {
+  id: string;
+  user_id: string;
+  make_model: string;
+  year: number | null;
+  color: string | null;
+  seats: number;
+  vehicle_type: VehicleType;
+  pet_policy: VehiclePetPolicy;
+  smoking_policy: VehicleSmokingPolicy;
+  accessibility_features: string | null;
+  is_active: boolean;
+  created_at: string;
+};
+
+export type VehicleInput = Omit<Vehicle, "id" | "user_id" | "created_at">;
+export type VehicleSnapshot = Omit<Vehicle, "user_id" | "created_at" | "is_active">;
+
+export type DriverOfferStatus = "active" | "cancelled" | "completed";
+
+export type DriverOfferInput = {
+  from_location: string;
+  to_location: string;
+  departure_time: string;
+  offered_price: number;
+  available_places: number;
+  pickup_details: string | null;
+  message: string | null;
+  vehicle_id: string;
+  status: DriverOfferStatus;
+};
+
+export type DriverOffer = DriverOfferInput & {
+  id: string;
+  driver_id: string;
+  driver_name: string;
+  vehicle_snapshot: VehicleSnapshot;
+  created_at: string;
 };
 
 export type Contact = {
   id: string;
   user_id: string;
   contact_id: string;
-  status: "pending" | "accepted";
+  status: "pending" | "accepted" | "blocked";
   created_at: string;
   user: {
     name: string;
@@ -61,6 +115,14 @@ export type RideData = {
   rider_name: string;
   rider_phone: string | null;
   note: string | null;
+  passenger_count: number;
+  max_price: number | null;
+  luggage_count: number | null;
+  pet_preference: "any" | "pets_allowed" | "no_pets";
+  smoking_preference: "any" | "non_smoking" | "smoking_allowed";
+  accessibility_needs: string | null;
+  vehicle_type: "any" | "sedan" | "suv" | "van";
+  gender_preference: "any" | "female" | "male";
 };
 
 export type AssociatedPerson = {

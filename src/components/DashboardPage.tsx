@@ -47,6 +47,13 @@ import { useOnlineStatus } from "@/utils/useOnlineStatus";
 
 import { Separator } from "./ui/separator";
 
+function splitLocation(value: string | null | undefined) {
+  const location =
+    typeof value === "string" && value.trim() ? value.trim() : "Location unavailable";
+  const [short, ...remaining] = location.split(",");
+  return { short, detail: remaining.join(",").trim() };
+}
+
 interface FilterProps {
   statusFilter: string | null;
   setStatusFilter: (status: string | null) => void;
@@ -304,6 +311,7 @@ export default function DashboardPage({
 
   const getRequesterName = (ride: Ride) => {
     if (ride.requester_id === currentUser.id) return "Me"; // Or currentUser.name
+    if (ride.requester_name) return ride.requester_name;
     const contact = contacts.find(
       (c) => c.user_id === ride.requester_id || c.contact_id === ride.requester_id
     );
@@ -311,7 +319,31 @@ export default function DashboardPage({
       ? contact.user_id === ride.requester_id
         ? contact.user.name
         : contact.contact.name
-      : "Unknown";
+      : "Ride requester";
+  };
+
+  const getRideCriteria = (ride: Ride) => {
+    const criteria = [`${ride.passenger_count ?? 1} passenger${ride.passenger_count === 1 ? "" : "s"}`];
+    if (ride.max_price !== null && ride.max_price !== undefined) {
+      criteria.push(`Max price ${ride.max_price}`);
+    }
+    if (ride.luggage_count !== null && ride.luggage_count !== undefined) {
+      criteria.push(`${ride.luggage_count} luggage piece${ride.luggage_count === 1 ? "" : "s"}`);
+    }
+    if (ride.pet_preference && ride.pet_preference !== "any") {
+      criteria.push(ride.pet_preference === "pets_allowed" ? "Pets allowed" : "No pets");
+    }
+    if (ride.smoking_preference && ride.smoking_preference !== "any") {
+      criteria.push(ride.smoking_preference === "non_smoking" ? "Non-smoking" : "Smoking allowed");
+    }
+    if (ride.accessibility_needs) criteria.push(`Accessibility: ${ride.accessibility_needs}`);
+    if (ride.vehicle_type && ride.vehicle_type !== "any") {
+      criteria.push(ride.vehicle_type.toUpperCase());
+    }
+    if (ride.gender_preference && ride.gender_preference !== "any") {
+      criteria.push(ride.gender_preference === "female" ? "Woman driver" : "Man driver");
+    }
+    return criteria;
   };
 
   // This replaces the current filteredRides useMemo hook in the component
@@ -445,11 +477,8 @@ export default function DashboardPage({
   const RideCard = ({ ride }: { ride: Ride }) => {
     const { time, relative } = formatDateTime(ride.time);
 
-    // Extract just the first part of the location for a cleaner display
-    const fromLocationParts = ride.from_location.split(",");
-    const toLocationParts = ride.to_location.split(",");
-    const fromLocationShort = fromLocationParts[0];
-    const toLocationShort = toLocationParts[0];
+    const fromLocation = splitLocation(ride.from_location);
+    const toLocation = splitLocation(ride.to_location);
 
     return (
       <Link href={`/rides/${ride.id}?from=${activeTab}`}>
@@ -499,18 +528,18 @@ export default function DashboardPage({
                 <div className="flex-1 space-y-4 min-w-0">
                   <div className="flex-1">
                     <p className="font-medium text-sm sm:text-base break-words">
-                      {fromLocationShort}
+                      {fromLocation.short}
                     </p>
                     <p className="text-xs text-muted-foreground break-words">
-                      {ride.from_location.replace(fromLocationShort + ",", "")}
+                      {fromLocation.detail}
                     </p>
                   </div>
                   <div className="flex-1">
                     <p className="font-medium text-sm sm:text-base break-words">
-                      {toLocationShort}
+                      {toLocation.short}
                     </p>
                     <p className="text-xs text-muted-foreground break-words">
-                      {ride.to_location.replace(toLocationShort + ",", "")}
+                      {toLocation.detail}
                     </p>
                   </div>
                 </div>
@@ -533,6 +562,22 @@ export default function DashboardPage({
                       Offered by: {getOfferedByText(ride)}
                     </span>
                   </div>
+                  {ride.offered_vehicle && (
+                    <div className="text-sm text-muted-foreground break-words">
+                      <span className="font-medium">Car:</span> {ride.offered_vehicle.make_model}
+                      {ride.offered_vehicle.year ? ` (${ride.offered_vehicle.year})` : ""} ·{" "}
+                      {ride.offered_vehicle.color || "Color not specified"} ·{" "}
+                      {ride.offered_vehicle.seats} seats ·{" "}
+                      {ride.offered_vehicle.vehicle_type.toUpperCase()} ·{" "}
+                      {ride.offered_vehicle.pet_policy === "allowed" ? "Pets allowed" : "No pets"} ·{" "}
+                      {ride.offered_vehicle.smoking_policy === "non_smoking"
+                        ? "Non-smoking"
+                        : "Smoking allowed"}
+                      {ride.offered_vehicle.accessibility_features
+                        ? ` · Accessibility: ${ride.offered_vehicle.accessibility_features}`
+                        : ""}
+                    </div>
+                  )}
                 </>
               )}
               {ride.note && (
@@ -545,6 +590,11 @@ export default function DashboardPage({
                   </div>
                 </>
               )}
+              <div className="min-w-0">
+                <p className="text-sm text-muted-foreground break-words">
+                  <span className="font-medium">Criteria:</span> {getRideCriteria(ride).join(" · ")}
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -606,11 +656,8 @@ export default function DashboardPage({
       const actionNeeded =
         ride.status === "pending" ? (isUserRequester ? "Waiting for offer" : "Offer a ride") : "";
 
-      // Extract just the first part of the location for a cleaner display
-      const fromLocationParts = ride.from_location.split(",");
-      const toLocationParts = ride.to_location.split(",");
-      const fromLocationShort = fromLocationParts[0];
-      const toLocationShort = toLocationParts[0];
+      const fromLocation = splitLocation(ride.from_location);
+      const toLocation = splitLocation(ride.to_location);
 
       return (
         <Card
@@ -663,15 +710,15 @@ export default function DashboardPage({
                 </div>
                 <div className="flex-1 space-y-4 min-w-0">
                   <div className="flex-1">
-                    <p className="font-medium text-sm break-words">{fromLocationShort}</p>
+                    <p className="font-medium text-sm break-words">{fromLocation.short}</p>
                     <p className="text-xs text-muted-foreground break-words">
-                      {ride.from_location.replace(fromLocationShort + ",", "")}
+                      {fromLocation.detail}
                     </p>
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium text-sm break-words">{toLocationShort}</p>
+                    <p className="font-medium text-sm break-words">{toLocation.short}</p>
                     <p className="text-xs text-muted-foreground break-words">
-                      {ride.to_location.replace(toLocationShort + ",", "")}
+                      {toLocation.detail}
                     </p>
                   </div>
                 </div>

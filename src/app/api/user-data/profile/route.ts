@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
 
     const { data: userData, error: userError } = await supabase
       .from("users")
-      .select("*")
+      .select("id, name, email, phone, is_verified, created_at")
       .eq("id", userId)
       .single();
 
@@ -73,7 +73,8 @@ export async function GET(req: NextRequest) {
         "Cache-Control": "public, max-age=0, must-revalidate",
       },
     });
-  } catch {
+  } catch (error) {
+    console.error("Failed to load profile data:", error);
     return new NextResponse(JSON.stringify({ error: "Internal Server Error" }), {
       status: 500,
       headers: {

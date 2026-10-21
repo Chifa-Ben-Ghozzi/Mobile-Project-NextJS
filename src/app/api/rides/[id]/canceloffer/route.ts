@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { supabase } from "@/lib/db";
 import { sendImmediateNotification } from "@/lib/pushNotificationService";
+import { isRideStatusConstraintError, normalizeRideStatus } from "@/lib/rideStatus";
+import { isMissingVehicleSchema, vehicleMigrationMessage } from "@/lib/vehicle";
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -32,12 +34,21 @@ export async function POST(request: Request) {
     }
 
     // Update the ride
-    const { data: updatedRide, error: updateError } = await supabase
+    let { data: updatedRide, error: updateError } = await supabase
       .from("rides")
-      .update({ accepter_id: null, status: "pending" })
+      .update({ accepter_id: null, status: "pending", offered_vehicle: null })
       .eq("id", rideId)
       .select()
       .single();
+
+    if (isRideStatusConstraintError(updateError)) {
+      ({ data: updatedRide, error: updateError } = await supabase
+        .from("rides")
+        .update({ accepter_id: null, status: "available", offered_vehicle: null })
+        .eq("id", rideId)
+        .select()
+        .single());
+    }
 
     if (updateError) throw updateError;
 
@@ -50,25 +61,29 @@ export async function POST(request: Request) {
 
     if (accepterError) throw accepterError;
 
-    // Send notification to the requester
-    await sendImmediateNotification(
-      ride.requester_id,
-      "Ride Offer Cancelled",
-      `${accepter.name} has cancelled their offer for your ride from ${ride.from_location} to ${ride.to_location}`
-    );
-
-    // Create a notification in the database
+    const message = `${accepter.name} has cancelled their offer for your ride from ${ride.from_location} to ${ride.to_location}`;
+    try {
+      await sendImmediateNotification(ride.requester_id, "Ride Offer Cancelled", message);
+    } catch (notificationError) {
+      console.error(`Ride ${rideId} offer was cancelled, but push notification failed:`, notificationError);
+    }
     const { error: notificationError } = await supabase.from("notifications").insert({
       user_id: ride.requester_id,
-      message: `${accepter.name} has cancelled their offer for your ride from ${ride.from_location} to ${ride.to_location}`,
+      message,
       type: "rideCancelled",
       related_id: rideId,
     });
 
-    if (notificationError) throw notificationError;
+    if (notificationError) {
+      console.error(`Ride ${rideId} offer was cancelled, but notification record failed:`, notificationError);
+    }
 
-    return NextResponse.json({ ride: updatedRide });
-  } catch {
+    return NextResponse.json({ ride: normalizeRideStatus(updatedRide) });
+  } catch (error) {
+    console.error("Failed to cancel ride offer:", error);
+    if (isMissingVehicleSchema(error)) {
+      return NextResponse.json({ error: vehicleMigrationMessage }, { status: 503 });
+    }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

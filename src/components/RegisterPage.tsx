@@ -31,6 +31,7 @@ interface RegisterPageProps {
 export default function RegisterPage({ quote }: RegisterPageProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState("");
   const router = useRouter();
   const { data: session } = useSession();
 
@@ -43,11 +44,13 @@ export default function RegisterPage({ quote }: RegisterPageProps) {
 
   const handleRegister = async (name: string, phone: string, email: string, password: string) => {
     setIsLoading(true);
+    const normalizedEmail = email.trim().toLowerCase();
+    setVerificationEmail(normalizedEmail);
     try {
       const response = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, phone, email, password }),
+        body: JSON.stringify({ name, phone, email: normalizedEmail, password }),
       });
 
       const data = await response.json();
@@ -61,7 +64,7 @@ export default function RegisterPage({ quote }: RegisterPageProps) {
           },
         });
       } else {
-        if (data.error === "Email already registered") {
+        if (data.type === "EMAIL_EXISTS" || data.error === "Email already registered") {
           toast.error("Email already registered. Please try logging in or use a different email.", {
             action: {
               label: "Go to Login",
@@ -70,15 +73,22 @@ export default function RegisterPage({ quote }: RegisterPageProps) {
               },
             },
           });
-        } else if (data.error === "Email not verified") {
-          toast.error("Email not verified. Please check your inbox for the verification email.", {
+        } else if (data.type === "EMAIL_UNVERIFIED" || data.error === "Email not verified") {
+          toast.error("This email already has an unverified account. Resend its verification email.", {
             action: {
               label: "Resend Verification",
               onClick: () => handleResendVerification(),
             },
           });
+        } else if (data.type === "PHONE_EXISTS") {
+          toast.error("Phone number already registered. Log in to your existing account or use another number.", {
+            action: {
+              label: "Go to Login",
+              onClick: () => router.push("/login"),
+            },
+          });
         } else {
-          toast.error("Registration failed. Please try again.");
+          toast.error(data.error || "Registration failed. Please try again.");
         }
       }
     } catch {
@@ -93,13 +103,14 @@ export default function RegisterPage({ quote }: RegisterPageProps) {
       const response = await fetch("/api/auth/resend-verification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: "" }), //This needs to be updated to get the email from the form
+        body: JSON.stringify({ identifier: verificationEmail, loginMethod: "email" }),
       });
 
       if (response.ok) {
         toast.success("Verification email resent. Please check your inbox.");
       } else {
-        toast.error("Failed to resend verification email. Please try again.");
+        const data = await response.json();
+        toast.error(data.error || "Failed to resend verification email. Please try again.");
       }
     } catch {
       toast.error("An error occurred. Please try again later.");

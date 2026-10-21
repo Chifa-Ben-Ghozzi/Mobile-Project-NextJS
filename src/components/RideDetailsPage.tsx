@@ -19,6 +19,9 @@ import {
   MoreHorizontal,
   Check,
   X,
+  Users,
+  Car,
+  Trash2,
 } from "lucide-react";
 import type maplibregl from "maplibre-gl";
 import { Map, Marker, Popup } from "maplibre-gl";
@@ -50,20 +53,37 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import type { User, Ride, Contact } from "@/types";
+import type { User, Ride, Contact, Vehicle } from "@/types";
 import {
   acceptRide,
   cancelRequest,
   cancelOffer,
   fetchRideDetailsData,
+  fetchVehicles,
   finishRide,
+  deleteRideAnnouncement,
 } from "@/utils/api";
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
 
@@ -89,8 +109,13 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isActionLoading, setIsActionLoading] = useState(false);
+  const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
+  const [isLoadingVehicles, setIsLoadingVehicles] = useState(false);
+  const [offerVehicles, setOfferVehicles] = useState<Vehicle[]>([]);
+  const [selectedVehicleId, setSelectedVehicleId] = useState("");
   const router = useRouter();
   const [isCancelRequestDialogOpen, setIsCancelRequestDialogOpen] = useState(false);
+  const [isDeleteAnnouncementDialogOpen, setIsDeleteAnnouncementDialogOpen] = useState(false);
   const [isCancelOfferDialogOpen, setIsCancelOfferDialogOpen] = useState(false);
   const [isFinishRideDialogOpen, setIsFinishRideDialogOpen] = useState(false);
   const mapRef = useRef<HTMLDivElement | null>(null);
@@ -197,11 +222,11 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
     const contact = contacts.find(
       (c) => c.user_id === ride.requester_id || c.contact_id === ride.requester_id
     );
-    return contact
+    return ride.requester_name || (contact
       ? contact.user_id === ride.requester_id
         ? contact.user.name
         : contact.contact.name
-      : "Unknown User";
+      : "Unknown User");
   };
 
   const getOfferedByText = (ride: Ride) => {
@@ -435,16 +460,35 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
     buildMap();
   }, [ride, map]);
 
+  const openVehicleOfferDialog = async () => {
+    setIsLoadingVehicles(true);
+    try {
+      const vehicles = (await fetchVehicles()).filter((vehicle) => vehicle.is_active);
+      setOfferVehicles(vehicles);
+      if (vehicles.length === 0) {
+        toast.error("Add an active car in Profile > Cars before offering this ride.");
+        return;
+      }
+      setSelectedVehicleId(vehicles[0].id);
+      setIsVehicleDialogOpen(true);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not load your cars.");
+    } finally {
+      setIsLoadingVehicles(false);
+    }
+  };
+
   const handleAcceptRide = async () => {
-    if (!ride) return;
+    if (!ride || !selectedVehicleId) return;
 
     setIsActionLoading(true);
     try {
-      await acceptRide(ride.id);
+      await acceptRide(ride.id, selectedVehicleId);
+      setIsVehicleDialogOpen(false);
       await fetchData(true);
       toast.success("Ride offered successfully.");
-    } catch {
-      toast.error("Failed to accept ride. Please try again.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to offer this ride.");
     } finally {
       setIsActionLoading(false);
     }
@@ -466,6 +510,24 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
       router.push("/dashboard");
     } catch {
       toast.error("Failed to cancel request. Please try again.");
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const confirmDeleteAnnouncement = async () => {
+    if (!ride) return;
+
+    setIsActionLoading(true);
+    try {
+      await deleteRideAnnouncement(ride.id);
+      setIsDeleteAnnouncementDialogOpen(false);
+      toast.success("Ride announcement deleted.");
+      router.push("/dashboard");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete ride announcement."
+      );
     } finally {
       setIsActionLoading(false);
     }
@@ -700,11 +762,11 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
       if (ride.requester_id !== currentUser?.id) {
         return (
           <Button
-            onClick={handleAcceptRide}
+            onClick={openVehicleOfferDialog}
             className="w-full sm:w-auto"
-            disabled={isActionLoading || !isOnline}
+            disabled={isActionLoading || isLoadingVehicles || !isOnline}
           >
-            {isActionLoading ? (
+            {isActionLoading || isLoadingVehicles ? (
               <Loader className="animate-spin h-5 w-5 mr-2" />
             ) : (
               <Check className="w-4 h-4 mr-2" />
@@ -769,6 +831,20 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
         label: "Cancel Request",
         icon: <X className="w-4 h-4 mr-2" />,
         onClick: handleCancelRequest,
+        disabled: isActionLoading || !isOnline,
+        destructive: true,
+      });
+    }
+
+    if (
+      ride.requester_id === currentUser?.id &&
+      !ride.accepter_id &&
+      ["pending", "available", "cancelled"].includes(ride.status)
+    ) {
+      actions.push({
+        label: "Delete Announcement",
+        icon: <Trash2 className="w-4 h-4 mr-2" />,
+        onClick: () => setIsDeleteAnnouncementDialogOpen(true),
         disabled: isActionLoading || !isOnline,
         destructive: true,
       });
@@ -989,6 +1065,64 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
           ) : null}
         </div>
         <Separator />
+        {ride && (
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <Users className="w-5 h-5 text-primary" />
+              <Label className="font-semibold">Ride criteria</Label>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 ml-7 text-sm">
+              <p><span className="font-medium">Passengers:</span> {ride.passenger_count ?? 1}</p>
+              <p>
+                <span className="font-medium">Maximum price:</span>{" "}
+                {ride.max_price === null || ride.max_price === undefined
+                  ? "No limit"
+                  : ride.max_price}
+              </p>
+              <p>
+                <span className="font-medium">Luggage:</span>{" "}
+                {ride.luggage_count === null || ride.luggage_count === undefined
+                  ? "No preference"
+                  : ride.luggage_count}
+              </p>
+              <p>
+                <span className="font-medium">Pets:</span>{" "}
+                {ride.pet_preference === "pets_allowed"
+                  ? "Must be allowed"
+                  : ride.pet_preference === "no_pets"
+                    ? "No pets"
+                    : "No preference"}
+              </p>
+              <p>
+                <span className="font-medium">Smoking:</span>{" "}
+                {ride.smoking_preference === "non_smoking"
+                  ? "Non-smoking vehicle"
+                  : ride.smoking_preference === "smoking_allowed"
+                    ? "Smoking allowed"
+                    : "No preference"}
+              </p>
+              <p>
+                <span className="font-medium">Vehicle:</span>{" "}
+                {ride.vehicle_type && ride.vehicle_type !== "any"
+                  ? ride.vehicle_type.toUpperCase()
+                  : "No preference"}
+              </p>
+              <p>
+                <span className="font-medium">Driver gender:</span>{" "}
+                {ride.gender_preference === "female"
+                  ? "Woman driver"
+                  : ride.gender_preference === "male"
+                    ? "Man driver"
+                    : "No preference"}
+              </p>
+              <p className="sm:col-span-2">
+                <span className="font-medium">Accessibility:</span>{" "}
+                {ride.accessibility_needs || "None specified"}
+              </p>
+            </div>
+          </div>
+        )}
+        <Separator />
         {isLoading ? (
           <div className="space-y-2">
             <div className="flex items-center space-x-2">
@@ -1011,13 +1145,47 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
           ride &&
           (ride.status === "accepted" || ride.status === "completed") &&
           ride.accepter_id && (
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <LucideUser className="w-5 h-5 text-primary" />
-                <Label className="font-semibold">Offered by</Label>
+            <>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <LucideUser className="w-5 h-5 text-primary" />
+                  <Label className="font-semibold">Offered by</Label>
+                </div>
+                <p className="ml-7">{getOfferedByText(ride)}</p>
               </div>
-              <p className="ml-7">{getOfferedByText(ride)}</p>
-            </div>
+              {ride.offered_vehicle && (
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Car className="w-5 h-5 text-primary" />
+                    <Label className="font-semibold">Offered vehicle</Label>
+                  </div>
+                  <div className="ml-7 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                    <p>
+                      <span className="font-medium">Vehicle:</span>{" "}
+                      {ride.offered_vehicle.make_model}
+                      {ride.offered_vehicle.year ? ` (${ride.offered_vehicle.year})` : ""}
+                    </p>
+                    <p><span className="font-medium">Color:</span> {ride.offered_vehicle.color || "Not specified"}</p>
+                    <p><span className="font-medium">Seats:</span> {ride.offered_vehicle.seats}</p>
+                    <p><span className="font-medium">Type:</span> {ride.offered_vehicle.vehicle_type.toUpperCase()}</p>
+                    <p>
+                      <span className="font-medium">Pets:</span>{" "}
+                      {ride.offered_vehicle.pet_policy === "allowed" ? "Allowed" : "Not allowed"}
+                    </p>
+                    <p>
+                      <span className="font-medium">Smoking:</span>{" "}
+                      {ride.offered_vehicle.smoking_policy === "non_smoking"
+                        ? "Non-smoking"
+                        : "Smoking allowed"}
+                    </p>
+                    <p className="sm:col-span-2">
+                      <span className="font-medium">Accessibility features:</span>{" "}
+                      {ride.offered_vehicle.accessibility_features || "None specified"}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         <Separator />
         {!isLoading &&
@@ -1074,6 +1242,40 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
         )}
       </CardFooter>
 
+      <Dialog open={isVehicleDialogOpen} onOpenChange={setIsVehicleDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Choose a car for your offer</DialogTitle>
+            <DialogDescription>
+              The selected car details will be attached to this ride offer.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Label htmlFor="offer_vehicle">Your active cars</Label>
+            <Select value={selectedVehicleId} onValueChange={setSelectedVehicleId}>
+              <SelectTrigger id="offer_vehicle">
+                <SelectValue placeholder="Select a car" />
+              </SelectTrigger>
+              <SelectContent>
+                {offerVehicles.map((vehicle) => (
+                  <SelectItem key={vehicle.id} value={vehicle.id}>
+                    {vehicle.make_model} · {vehicle.seats} seats · {vehicle.vehicle_type.toUpperCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={handleAcceptRide}
+              disabled={!selectedVehicleId || isActionLoading || !isOnline}
+            >
+              {isActionLoading ? "Offering..." : "Confirm offer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog open={isCancelRequestDialogOpen} onOpenChange={setIsCancelRequestDialogOpen}>
         <AlertDialogContent className="w-11/12 rounded-md">
           <AlertDialogHeader>
@@ -1088,6 +1290,31 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
             </AlertDialogCancel>
             <AlertDialogAction onClick={confirmCancelRequest}>
               Yes, Cancel Request
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={isDeleteAnnouncementDialogOpen}
+        onOpenChange={setIsDeleteAnnouncementDialogOpen}
+      >
+        <AlertDialogContent className="w-11/12 rounded-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this ride announcement?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently deletes your ride request and its associated ride messages. This
+              cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isActionLoading}>Keep Announcement</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteAnnouncement}
+              disabled={isActionLoading || !isOnline}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isActionLoading ? "Deleting..." : "Delete Announcement"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
