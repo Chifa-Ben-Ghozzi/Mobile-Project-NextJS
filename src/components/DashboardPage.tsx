@@ -366,21 +366,24 @@ export default function DashboardPage({
       .map((ride) => {
         let score = 0;
         const searchTermLower = localSearchTerm.toLowerCase();
+        const fromLocation = (ride.from_location ?? "").toLowerCase();
+        const toLocation = (ride.to_location ?? "").toLowerCase();
+        const riderName = (ride.rider_name ?? "").toLowerCase();
 
         // Exact matches get highest priority
-        if (ride.from_location.toLowerCase() === searchTermLower) score += 100;
-        if (ride.to_location.toLowerCase() === searchTermLower) score += 100;
-        if (ride.rider_name.toLowerCase() === searchTermLower) score += 100;
+        if (fromLocation === searchTermLower) score += 100;
+        if (toLocation === searchTermLower) score += 100;
+        if (riderName === searchTermLower) score += 100;
 
         // Starts with matches get high priority
-        if (ride.from_location.toLowerCase().startsWith(searchTermLower)) score += 75;
-        if (ride.to_location.toLowerCase().startsWith(searchTermLower)) score += 75;
-        if (ride.rider_name.toLowerCase().startsWith(searchTermLower)) score += 75;
+        if (fromLocation.startsWith(searchTermLower)) score += 75;
+        if (toLocation.startsWith(searchTermLower)) score += 75;
+        if (riderName.startsWith(searchTermLower)) score += 75;
 
         // Contains matches get medium priority
-        if (ride.from_location.toLowerCase().includes(searchTermLower)) score += 50;
-        if (ride.to_location.toLowerCase().includes(searchTermLower)) score += 50;
-        if (ride.rider_name.toLowerCase().includes(searchTermLower)) score += 50;
+        if (fromLocation.includes(searchTermLower)) score += 50;
+        if (toLocation.includes(searchTermLower)) score += 50;
+        if (riderName.includes(searchTermLower)) score += 50;
 
         // Check for word boundaries to prioritize whole word matches
         const wordBoundaryCheck = (text: string) => {
@@ -388,9 +391,9 @@ export default function DashboardPage({
           return words.some((word) => word === searchTermLower) ? 25 : 0;
         };
 
-        score += wordBoundaryCheck(ride.from_location);
-        score += wordBoundaryCheck(ride.to_location);
-        score += wordBoundaryCheck(ride.rider_name);
+        score += wordBoundaryCheck(fromLocation);
+        score += wordBoundaryCheck(toLocation);
+        score += wordBoundaryCheck(riderName);
 
         // Additional search in note field with lower priority
         if (ride.note && ride.note.toLowerCase().includes(searchTermLower)) {
@@ -412,8 +415,8 @@ export default function DashboardPage({
           return parts.some((part) => part.trim().includes(searchTermLower)) ? 20 : 0;
         };
 
-        score += partialLocationMatch(ride.from_location);
-        score += partialLocationMatch(ride.to_location);
+        score += partialLocationMatch(fromLocation);
+        score += partialLocationMatch(toLocation);
 
         // If this is a multi-word search term, check for matches of individual words
         if (searchTermLower.includes(" ")) {
@@ -421,9 +424,9 @@ export default function DashboardPage({
           searchWords.forEach((word) => {
             if (word.length > 2) {
               // Only consider meaningful words (longer than 2 chars)
-              if (ride.from_location.toLowerCase().includes(word)) score += 10;
-              if (ride.to_location.toLowerCase().includes(word)) score += 10;
-              if (ride.rider_name.toLowerCase().includes(word)) score += 10;
+              if (fromLocation.includes(word)) score += 10;
+              if (toLocation.includes(word)) score += 10;
+              if (riderName.includes(word)) score += 10;
             }
           });
         }
