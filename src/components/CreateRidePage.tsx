@@ -607,7 +607,7 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
     <div className="flex flex-col items-center justify-center min-h-fit bg-background px-4 py-4">
       <Card className="w-full max-w-xl mx-auto shadow-lg" data-tutorial="ride-form">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold">Create a Ride</CardTitle>
+          <CardTitle className="text-3xl font-bold">Request a Ride</CardTitle>
           <CardDescription>Fill in the details for your ride request.</CardDescription>
         </CardHeader>
         <CardContent className="px-6 py-4">
@@ -685,7 +685,7 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
               ) : (
                 <ArrowRight className="mr-2 h-4 w-4" />
               )}
-              {isSubmitting ? "Creating..." : "Create Ride"}
+              {isSubmitting ? "Submitting..." : "Request a Ride"}
             </Button>
           )}
         </CardFooter>

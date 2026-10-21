@@ -74,7 +74,7 @@ const tutorialSteps: TutorialStep[] = [
     key: "create-ride",
     page: "/dashboard",
     step: 5,
-    title: "Create a Ride",
+    title: "Request a Ride",
     content:
       "Click this button to offer or request a new ride. You'll be able to set all the necessary details for your journey.",
     target: "[data-tutorial='create-ride']",

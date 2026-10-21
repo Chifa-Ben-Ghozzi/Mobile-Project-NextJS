@@ -826,7 +826,7 @@ export default function DashboardPage({
                 variant="default"
                 onClick={() => router.push("/create-ride")}
               >
-                Create Ride
+                Request a Ride
               </Button>
             </div>
           </div>

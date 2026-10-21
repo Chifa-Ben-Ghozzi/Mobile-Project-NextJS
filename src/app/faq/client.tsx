@@ -38,7 +38,7 @@ const faqs = [
   {
     question: "How do I create a ride?",
     answer:
-      "To create a ride, log in to your account, go to the dashboard, and click on the 'Create Ride' button. Fill in the details of your ride, including start and end locations, date, time, and any additional notes.",
+      "To request a ride, log in to your account, go to the dashboard, and click on the 'Request a Ride' button. Fill in the details of your ride, including start and end locations, date, time, and any additional notes.",
   },
   {
     question: "Can I edit or cancel a ride?",

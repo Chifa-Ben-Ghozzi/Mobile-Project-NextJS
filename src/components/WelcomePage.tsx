@@ -14,7 +14,6 @@ import {
   HelpCircle,
   FileText,
   Info,
-  Code,
   Mail,
   ArrowRight,
   Shield,
@@ -607,14 +606,6 @@ export default function WelcomePage() {
       >
         <div className="container mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className={`text-${isMediumScreen ? "sm" : "xs"} font-medium text-foreground/80`}>
-              <a className="cursor-default" href="/admin">
-                &copy;
-              </a>{" "}
-              {new Date().getFullYear()} RideShare by Félix Robb.
-              <span className="text-muted-foreground ml-1">All rights reserved.</span>
-            </p>
-
             <div className="mt-4 md:mt-0">
               {!isMediumScreen ? (
                 // Mobile Drawer with controlled open state
@@ -639,11 +630,6 @@ export default function WelcomePage() {
                         },
                         { href: "/about", label: "Learn more", icon: Info },
                         { href: "/faq", label: "FAQ", icon: HelpCircle },
-                        {
-                          href: "https://github.com/FelixRobb/ride-share-app",
-                          label: "GitHub",
-                          icon: Code,
-                        },
                         {
                           href: "mailto:rideshareapp.mail@gmail.com",
                           label: "Contact Us",
@@ -692,11 +678,6 @@ export default function WelcomePage() {
                           },
                           { href: "/about", label: "Learn more", icon: Info },
                           { href: "/faq", label: "FAQ", icon: HelpCircle },
-                          {
-                            href: "https://github.com/FelixRobb/ride-share-app",
-                            label: "GitHub",
-                            icon: Code,
-                          },
                           {
                             href: "mailto:rideshareapp.mail@gmail.com",
                             label: "Contact Us",

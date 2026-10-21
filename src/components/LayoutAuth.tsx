@@ -1,5 +1,5 @@
 "use client";
-import { ArrowRight, HelpCircle, Shield, FileText, Info, Code, Mail } from "lucide-react";
+import { ArrowRight, HelpCircle, Shield, FileText, Info, Mail } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useState } from "react";
@@ -62,11 +62,6 @@ export default function LayoutAuth({ children }: LayoutProps) {
       >
         <div className="container mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className={`text-${isMediumScreen ? "sm" : "xs"} font-medium text-foreground/80`}>
-              <a href="/admin">&copy;</a> {new Date().getFullYear()} RideShare by Félix Robb.
-              <span className="text-muted-foreground ml-1">All rights reserved.</span>
-            </p>
-
             <div className="mt-4 md:mt-0">
               {!isMediumScreen ? (
                 // Mobile Drawer with controlled open state
@@ -91,11 +86,6 @@ export default function LayoutAuth({ children }: LayoutProps) {
                         },
                         { href: "/about", label: "Learn more", icon: Info },
                         { href: "/faq", label: "FAQ", icon: HelpCircle },
-                        {
-                          href: "https://github.com/FelixRobb/ride-share-app",
-                          label: "GitHub",
-                          icon: Code,
-                        },
                         {
                           href: "mailto:rideshareapp.mail@gmail.com",
                           label: "Contact Us",
@@ -144,11 +134,6 @@ export default function LayoutAuth({ children }: LayoutProps) {
                           },
                           { href: "/about", label: "Learn more", icon: Info },
                           { href: "/faq", label: "FAQ", icon: HelpCircle },
-                          {
-                            href: "https://github.com/FelixRobb/ride-share-app",
-                            label: "GitHub",
-                            icon: Code,
-                          },
                           {
                             href: "mailto:rideshareapp.mail@gmail.com",
                             label: "Contact Us",

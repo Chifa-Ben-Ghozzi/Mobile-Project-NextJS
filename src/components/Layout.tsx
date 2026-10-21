@@ -10,7 +10,6 @@ import {
   FileText,
   Info,
   Star,
-  Code,
   Mail,
   MessageSquareText,
   MessagesSquare,
@@ -112,7 +111,7 @@ export default function Layout({ children }: LayoutProps) {
                   <nav className={`flex items-center space-x-2 rounded-full p-1 border`}>
                     {[
                       { icon: Home, label: "Dashboard", href: "/dashboard" },
-                      { icon: Car, label: "Create Ride", href: "/create-ride" },
+                      { icon: Car, label: "Request a Ride", href: "/create-ride" },
                       { icon: CarFront, label: "Offer a Ride", href: "/offer-ride" },
                       { icon: MessageSquareText, label: "Reclamation", href: "/reclamations" },
                       { icon: MessagesSquare, label: "Forum", href: "/forum" },
@@ -153,7 +152,7 @@ export default function Layout({ children }: LayoutProps) {
               <div className="flex justify-around items-center h-16">
                 {[
                   { icon: Home, label: "Dashboard", href: "/dashboard" },
-                  { icon: Car, label: "Create Ride", href: "/create-ride" },
+                  { icon: Car, label: "Request a Ride", href: "/create-ride" },
                   { icon: CarFront, label: "Offer a Ride", href: "/offer-ride" },
                   { icon: MessageSquareText, label: "Reclamation", href: "/reclamations" },
                   { icon: Users, label: "Profile", href: "/profile" },
@@ -185,13 +184,6 @@ export default function Layout({ children }: LayoutProps) {
             >
               <div className="container mx-auto">
                 <div className="flex flex-col md:flex-row justify-between items-center">
-                  <p
-                    className={`text-${isMediumScreen ? "sm" : "xs"} font-medium text-foreground/80`}
-                  >
-                    <a href="/admin">&copy;</a> {new Date().getFullYear()} RideShare by Félix Robb.
-                    <span className="text-muted-foreground ml-1">All rights reserved.</span>
-                  </p>
-
                   <div className="mt-4 md:mt-0">
                     {!isMediumScreen ? (
                       // Mobile Drawer with controlled open state
@@ -218,11 +210,6 @@ export default function Layout({ children }: LayoutProps) {
                               { href: "/faq", label: "FAQ", icon: HelpCircle },
                               { href: "/reviews", label: "Leave a review", icon: Star },
                               { href: "/forum", label: "Community Forum", icon: MessagesSquare },
-                              {
-                                href: "https://github.com/FelixRobb/ride-share-app",
-                                label: "GitHub",
-                                icon: Code,
-                              },
                               { href: "/bug-report", label: "Bug Reports", icon: HelpCircle },
                               {
                                 href: "mailto:rideshareapp.mail@gmail.com",
@@ -277,11 +264,6 @@ export default function Layout({ children }: LayoutProps) {
                                 { href: "/faq", label: "FAQ", icon: HelpCircle },
                                 { href: "/reviews", label: "Leave a review", icon: Star },
                                 { href: "/forum", label: "Community Forum", icon: MessagesSquare },
-                                {
-                                  href: "https://github.com/FelixRobb/ride-share-app",
-                                  label: "GitHub",
-                                  icon: Code,
-                                },
                                 { href: "/bug-report", label: "Bug Reports", icon: HelpCircle },
                                 {
                                   href: "mailto:rideshareapp.mail@gmail.com",

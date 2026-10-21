@@ -27,7 +27,7 @@ const helpTopics = [
   {
     keywords: ["create ride", "request ride", "ride request", "passenger", "need a ride"],
     answer:
-      "Sign in, choose Create Ride, and enter your route, departure date and time, and ride preferences. Save the request to make it visible to other signed-in users.",
+      "Sign in, choose Request a Ride, and enter your route, departure date and time, and ride preferences. Save the request to make it visible to other signed-in users.",
   },
   {
     keywords: ["offer a ride", "offer ride", "driver offer", "publish trip", "driver trip"],
