@@ -13,6 +13,7 @@ import {
   Code,
   Mail,
   MessageSquareText,
+  MessagesSquare,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -89,6 +90,14 @@ export default function Layout({ children }: LayoutProps) {
         <div className="flex flex-col min-h-screen bg-background text-foreground relative">
           <TutorialProvider>
             <PushNotificationHandler />
+            {!isOnline && (
+              <div
+                role="status"
+                className="bg-destructive px-4 py-2 text-center text-sm font-medium text-destructive-foreground"
+              >
+                Offline Mode — Disconnected. Showing saved data when available; changes are unavailable.
+              </div>
+            )}
             <header className="bg-background/90 backdrop-blur-md shadow-md border-b border-border sticky top-0 z-50">
               <div className="container mx-auto px-4 py-3 flex items-center justify-between">
                 <div className="flex-shrink-0 mr-4">
@@ -105,6 +114,7 @@ export default function Layout({ children }: LayoutProps) {
                       { icon: Car, label: "Create Ride", href: "/create-ride" },
                       { icon: CarFront, label: "Offer a Ride", href: "/offer-ride" },
                       { icon: MessageSquareText, label: "Reclamation", href: "/reclamations" },
+                      { icon: MessagesSquare, label: "Forum", href: "/forum" },
                       { icon: Users, label: "Profile", href: "/profile" },
                     ].map((item) => (
                       <Button
@@ -204,6 +214,7 @@ export default function Layout({ children }: LayoutProps) {
                               { href: "/about", label: "Learn more", icon: Info },
                               { href: "/faq", label: "FAQ", icon: HelpCircle },
                               { href: "/reviews", label: "Leave a review", icon: Star },
+                              { href: "/forum", label: "Community Forum", icon: MessagesSquare },
                               {
                                 href: "https://github.com/FelixRobb/ride-share-app",
                                 label: "GitHub",
@@ -262,6 +273,7 @@ export default function Layout({ children }: LayoutProps) {
                                 { href: "/about", label: "Learn more", icon: Info },
                                 { href: "/faq", label: "FAQ", icon: HelpCircle },
                                 { href: "/reviews", label: "Leave a review", icon: Star },
+                                { href: "/forum", label: "Community Forum", icon: MessagesSquare },
                                 {
                                   href: "https://github.com/FelixRobb/ride-share-app",
                                   label: "GitHub",

@@ -228,7 +228,7 @@ export default function DashboardPage({
 
   const fetchData = useCallback(
     async (isInitial: boolean = false) => {
-      if (isOnline && currentUser) {
+      if (currentUser) {
         try {
           if (isInitial) {
             setIsInitialLoading(true);
@@ -265,17 +265,19 @@ export default function DashboardPage({
         }
       }
     },
-    [isOnline, currentUser]
+    [currentUser]
   );
 
   useEffect(() => {
     // Initial data fetch
     fetchData(true);
 
+    if (!isOnline) return;
+
     // Set up periodic refresh
     const intervalId = setInterval(() => fetchData(), 10000); // Refresh every 10 seconds
     return () => clearInterval(intervalId);
-  }, [fetchData]);
+  }, [fetchData, isOnline]);
 
   const formatDateTime = (timestamp: string) => {
     const date = new Date(timestamp);

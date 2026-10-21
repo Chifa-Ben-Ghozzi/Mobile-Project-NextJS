@@ -127,18 +127,6 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
 
   const fetchData = useCallback(
     async (silent = false) => {
-      if (!isOnline) {
-        if (!silent) {
-          setError({
-            type: "network",
-            message:
-              "You're currently offline. Please check your internet connection and try again.",
-            status: 0,
-          });
-        }
-        return;
-      }
-
       try {
         if (!silent) {
           setIsLoading(true);

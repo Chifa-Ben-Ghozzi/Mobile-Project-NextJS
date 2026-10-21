@@ -132,7 +132,7 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
   // Fetch associated people data
   useEffect(() => {
     const fetchData = async () => {
-      if (isOnline && currentUser) {
+      if (currentUser) {
         try {
           setIsLoading(true);
           const data = await fetchCreateRideData();
@@ -148,7 +148,7 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
     };
 
     fetchData();
-  }, [isOnline, currentUser]);
+  }, [currentUser]);
 
   useEffect(() => {
     setIsMounted(true);

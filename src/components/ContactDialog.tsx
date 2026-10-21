@@ -74,8 +74,6 @@ const useSuggestedContacts = (currentUserId: string, isOnline: boolean) => {
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
 
   const fetchSuggestedContacts = useCallback(async () => {
-    if (!isOnline) return;
-
     setIsFetchingSuggestions(true);
     try {
       const response = await fetch(`/api/suggested-contacts`);

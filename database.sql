@@ -540,4 +540,26 @@ BEGIN
   ORDER BY COUNT(*) DESC
   LIMIT 10;
 END;
-$function$
+$function$;
+
+CREATE TABLE IF NOT EXISTS public.forum_messages (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  content text NOT NULL CHECK (char_length(content) BETWEEN 1 AND 1000),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_forum_messages_created_at
+  ON public.forum_messages(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS public.forum_message_reactions (
+  message_id uuid NOT NULL REFERENCES public.forum_messages(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  emoji text NOT NULL CHECK (emoji IN ('👍', '❤️', '😂', '🎉', '🙌')),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (message_id, user_id, emoji)
+);
+
+CREATE INDEX IF NOT EXISTS idx_forum_message_reactions_message_id
+  ON public.forum_message_reactions(message_id);

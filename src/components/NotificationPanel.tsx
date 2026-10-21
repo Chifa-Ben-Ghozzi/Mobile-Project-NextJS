@@ -618,7 +618,7 @@ const NotificationSettings = ({ userId }: { userId: string }) => {
     let mounted = true;
 
     const fetchDevices = async () => {
-      if (!isOnline || !isSettingsOpen) return;
+      if (!isSettingsOpen) return;
 
       setIsLoading(true);
       try {
@@ -947,10 +947,6 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
   const etagRef = useRef<string | null>(null);
 
   const fetchNotificationsCallback = useCallback(async () => {
-    if (!isOnline) {
-      return;
-    }
-
     try {
       const headers: HeadersInit = {
         "Cache-Control": "max-age=0",
@@ -1032,17 +1028,16 @@ export function NotificationPanel({ userId }: NotificationPanelProps) {
       console.error("Error fetching notifications:", error);
       toast.error("Failed to fetch notifications");
     }
-  }, [isOnline]);
+  }, []);
 
   const handleClosePanel = useCallback(() => {
     setIsOpen(false);
   }, []);
   // Set up polling for notifications
   useEffect(() => {
-    if (isOnline) {
-      // Initial fetch
-      void fetchNotificationsCallback();
+    void fetchNotificationsCallback();
 
+    if (isOnline) {
       // Set up polling every 30 seconds
       const intervalId = setInterval(() => {
         void fetchNotificationsCallback();

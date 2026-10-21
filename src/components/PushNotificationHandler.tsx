@@ -45,12 +45,6 @@ export default function PushNotificationHandler() {
     }
 
     try {
-      // Force update by unregistering existing service workers first
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      for (const registration of registrations) {
-        await registration.unregister();
-      }
-
       const registration = await navigator.serviceWorker.register("/service-worker.js", {
         scope: "/",
       });

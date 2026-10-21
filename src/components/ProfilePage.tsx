@@ -155,8 +155,6 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
   // Fetch profile data
   const fetchData = useCallback(
     async (silent = false) => {
-      if (!isOnline) return;
-
       if (!silent) {
         setIsLoading(true);
       } else {
@@ -178,7 +176,7 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
         setIsRefreshing(false);
       }
     },
-    [isOnline]
+    []
   );
 
   // Initial data fetch
@@ -262,7 +260,7 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
 
   useEffect(() => {
     const fetchPushDevices = async () => {
-      if (!isOnline || !user) return;
+      if (!user) return;
 
       setIsPushLoading(true);
       try {
@@ -298,7 +296,7 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
     };
 
     void fetchPushDevices();
-  }, [user, user?.id, isOnline, permissionState, currentDeviceId, hasDeclinedInApp]);
+  }, [user, user?.id, permissionState, currentDeviceId, hasDeclinedInApp]);
 
   const handleToggleDevice = async (deviceId: string, enabled: boolean) => {
     try {
@@ -579,7 +577,7 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
   // Modify user stats fetching to have separate loading state
   useEffect(() => {
     const fetchStats = async () => {
-      if (user && isOnline) {
+      if (user) {
         const stats = await fetchUserStats(user.id);
         setUserStats(stats);
       }
