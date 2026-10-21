@@ -80,7 +80,7 @@ RideShare is a modern, user-friendly web application that facilitates ride-shari
    Fill in the values using your own service accounts:
 
    - **Required:** `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXTAUTH_SECRET`, `JWT_SECRET`, `NEXT_PUBLIC_APP_URL`, `GMAIL_USER`, and `GMAIL_PASS`.
-   - **Optional integrations:** `NEXT_PUBLIC_MAPTILER_KEY` enables maps; the VAPID keys enable push notifications; `NEXT_PUBLIC_CONTACT_EMAIL` sets the contact address.
+   - **Optional integrations:** `NEXT_PUBLIC_MAPTILER_KEY` enables maps; the VAPID keys enable push notifications; `NEXT_PUBLIC_CONTACT_EMAIL` sets the contact address; `GEMINI_API_KEY` enables AI-powered chatbot replies (`GEMINI_MODEL` defaults to `gemini-2.5-flash`).
    - Set `ADMIN_PASSWORD` if you need to use the admin dashboard.
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY` is used by the welcome page. It is a public client key; never expose the service-role key.
 

@@ -2,7 +2,7 @@
 
 import { Bot, MessageCircle, Send, Sparkles, X } from "lucide-react";
 import Link from "next/link";
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,103 +13,21 @@ type Message = {
 };
 
 const suggestedQuestions = [
-  "How do I create a ride?",
+  "How do I request a ride?",
   "How do I offer a trip?",
   "How do I add a vehicle?",
 ];
 
-const helpTopics = [
-  {
-    keywords: ["register", "sign up", "create account", "verification", "verify email"],
-    answer:
-      "Choose Register and enter your name, email, phone number (including country code), and password. Then open the verification link sent to your email before signing in.",
-  },
-  {
-    keywords: ["create ride", "request ride", "ride request", "passenger", "need a ride"],
-    answer:
-      "Sign in, choose Request a Ride, and enter your route, departure date and time, and ride preferences. Save the request to make it visible to other signed-in users.",
-  },
-  {
-    keywords: ["offer a ride", "offer ride", "driver offer", "publish trip", "driver trip"],
-    answer:
-      "Choose Offer a Ride to publish a trip as a driver. Add the route, departure time, available places, price, pickup details, and an optional message. Your active offer will be visible to signed-in users.",
-  },
-  {
-    keywords: ["find ride", "browse rides", "see rides", "search rides", "available rides"],
-    answer:
-      "Open the rides area from the navigation or dashboard to browse open requests and active driver offers. Open a ride to review its details and available actions.",
-  },
-  {
-    keywords: ["accept ride", "join ride", "offer to drive", "respond to ride", "book ride"],
-    answer:
-      "Open the ride or request and use its available offer or accept action. Check the route and details first; you can track updates from your dashboard and notifications.",
-  },
-  {
-    keywords: ["edit ride", "change ride", "cancel ride", "delete ride"],
-    answer:
-      "Open the ride from your dashboard and go to its details or edit page. Use the available edit or cancel action. Some changes may not be available after another user has accepted.",
-  },
-  {
-    keywords: ["contact", "add people", "add friend", "invite", "connection"],
-    answer:
-      "Go to your profile and open Manage Contacts. Search for another user and send a contact request; you can manage requests and contacts there.",
-  },
-  {
-    keywords: ["vehicle", "car", "add car"],
-    answer:
-      "Open your profile and use the vehicle manager to add or update your saved vehicles. You can select a saved vehicle when creating or editing a ride where vehicle details apply.",
-  },
-  {
-    keywords: ["notification", "push", "alerts"],
-    answer:
-      "Ride updates appear in the notification panel. To receive browser push notifications, enable them in your profile and allow notifications in your browser. Push delivery also depends on the app's push service being configured.",
-  },
-  {
-    keywords: ["history", "review", "rate"],
-    answer:
-      "Open Ride History to see past rides. Completed rides may offer an option to leave a review.",
-  },
-  {
-    keywords: ["password", "reset password", "forgot password"],
-    answer:
-      "On the login page, choose Forgot Password and enter the email address on your account. Follow the reset link sent to your email.",
-  },
-  {
-    keywords: ["map", "location", "address", "route"],
-    answer:
-      "Use the location fields when creating or editing a ride. If map search is unavailable, check that a map service is configured or enter the location manually.",
-  },
-];
-
-function getHelpAnswer(question: string): string {
-  const normalizedQuestion = question.toLowerCase().replace(/[^\w\s]/g, " ");
-  const match = helpTopics
-    .map((topic) => ({
-      ...topic,
-      score: topic.keywords.reduce(
-        (score, keyword) =>
-          score + (normalizedQuestion.includes(keyword) ? keyword.includes(" ") ? 2 : 1 : 0),
-        0
-      ),
-    }))
-    .sort((a, b) => b.score - a.score)[0];
-
-  if (match && match.score > 0) {
-    return match.answer;
-  }
-
-  return "I can help with accounts, rides, driver offers, contacts, vehicles, notifications, and ride history. Try asking about one of those, or browse the FAQ for more help.";
-}
+const welcomeMessage: Message = {
+  role: "assistant",
+  text: "Hi! I'm the RideShare help assistant. Ask me how to use the app and I'll guide you.",
+};
 
 export default function HelpChatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [question, setQuestion] = useState("");
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "assistant",
-      text: "Hi! I'm the RideShare help assistant. Ask me how to use a feature and I'll point you in the right direction.",
-    },
-  ]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([welcomeMessage]);
   const messageListRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -117,27 +35,58 @@ export default function HelpChatbot() {
       top: messageListRef.current.scrollHeight,
       behavior: "smooth",
     });
-  }, [messages, isOpen]);
+  }, [messages, isLoading, isOpen]);
+
+  async function askQuestion(text: string) {
+    const trimmedQuestion = text.trim();
+    if (!trimmedQuestion || isLoading) return;
+
+    const conversation = [...messages, { role: "user" as const, text: trimmedQuestion }];
+    setMessages(conversation);
+    setQuestion("");
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/chatbot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: conversation.slice(-10).map(({ role, text: messageText }) => ({
+            role,
+            text: messageText,
+          })),
+        }),
+      });
+      const data: { answer?: string; error?: string } = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "The help assistant couldn't respond. Please try again.");
+      }
+      if (!data.answer) {
+        throw new Error("The help assistant returned an empty response. Please try again.");
+      }
+
+      const answer = data.answer;
+      setMessages((currentMessages) => [...currentMessages, { role: "assistant", text: answer }]);
+    } catch (error) {
+      setMessages((currentMessages) => [
+        ...currentMessages,
+        {
+          role: "assistant",
+          text:
+            error instanceof Error
+              ? error.message
+              : "The help assistant couldn't respond. Please try again.",
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   function submitQuestion(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const trimmedQuestion = question.trim();
-    if (!trimmedQuestion) return;
-
-    setMessages((currentMessages) => [
-      ...currentMessages,
-      { role: "user", text: trimmedQuestion },
-      { role: "assistant", text: getHelpAnswer(trimmedQuestion) },
-    ]);
-    setQuestion("");
-  }
-
-  function askSuggestedQuestion(suggestedQuestion: string) {
-    setMessages((currentMessages) => [
-      ...currentMessages,
-      { role: "user", text: suggestedQuestion },
-      { role: "assistant", text: getHelpAnswer(suggestedQuestion) },
-    ]);
+    void askQuestion(question);
   }
 
   return (
@@ -152,7 +101,7 @@ export default function HelpChatbot() {
               <Bot aria-hidden="true" className="h-5 w-5" />
               <div>
                 <h2 className="font-semibold">RideShare Help</h2>
-                <p className="text-xs opacity-90">Here to help you use the app</p>
+                <p className="text-xs opacity-90">AI-powered help for using the app</p>
               </div>
             </div>
             <Button
@@ -188,13 +137,19 @@ export default function HelpChatbot() {
                 </p>
               </div>
             ))}
+            {isLoading && (
+              <p aria-label="Assistant is responding" className="text-sm text-muted-foreground">
+                Thinking...
+              </p>
+            )}
             {messages.length === 1 && (
               <div className="flex flex-wrap gap-2">
                 {suggestedQuestions.map((suggestedQuestion) => (
                   <button
-                    className="rounded-full border px-3 py-1.5 text-left text-xs transition-colors hover:bg-accent"
+                    className="rounded-full border px-3 py-1.5 text-left text-xs transition-colors hover:bg-accent disabled:opacity-50"
+                    disabled={isLoading}
                     key={suggestedQuestion}
-                    onClick={() => askSuggestedQuestion(suggestedQuestion)}
+                    onClick={() => void askQuestion(suggestedQuestion)}
                     type="button"
                   >
                     {suggestedQuestion}
@@ -208,18 +163,24 @@ export default function HelpChatbot() {
             <form className="flex items-center gap-2" onSubmit={submitQuestion}>
               <Input
                 aria-label="Ask a question about using RideShare"
+                disabled={isLoading}
                 onChange={(event) => setQuestion(event.target.value)}
                 placeholder="Ask how to use RideShare..."
                 value={question}
               />
-              <Button aria-label="Send question" disabled={!question.trim()} size="icon" type="submit">
+              <Button
+                aria-label="Send question"
+                disabled={isLoading || !question.trim()}
+                size="icon"
+                type="submit"
+              >
                 <Send aria-hidden="true" />
               </Button>
             </form>
             <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Sparkles aria-hidden="true" className="h-3 w-3" />
-                Answers are based on the app&apos;s help topics
+                AI answers may not always be accurate
               </span>
               <Link className="underline underline-offset-2 hover:text-foreground" href="/faq">
                 FAQ
