@@ -5,7 +5,7 @@ import { hash } from "bcrypt";
 import { parsePhoneNumber } from "libphonenumber-js";
 import { NextResponse } from "next/server";
 
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import {
   sendEmail,
   getVerificationEmailContent,
@@ -20,10 +20,18 @@ export async function POST(request: Request) {
       !name?.trim() ||
       !phone?.trim() ||
       !email?.trim() ||
-      !password
+      !password ||
+      typeof password !== "string"
     ) {
       return NextResponse.json(
         { error: "Name, phone, email, and password are required" },
+        { status: 400 }
+      );
+    }
+
+    if (password.length < 6) {
+      return NextResponse.json(
+        { error: "Password must be at least 6 characters" },
         { status: 400 }
       );
     }
@@ -52,8 +60,8 @@ export async function POST(request: Request) {
 
     // Check whether the email is already registered.
     const { data: existingEmail, error: emailCheckError } =
-      await supabase
-        .from("users")
+      await database
+        .collection("users")
           .select("id,is_verified")
         .eq("email", lowerCaseEmail)
         .maybeSingle();
@@ -80,8 +88,8 @@ export async function POST(request: Request) {
 
     // Check whether the phone number is already registered.
     const { data: existingPhone, error: phoneCheckError } =
-      await supabase
-        .from("users")
+      await database
+        .collection("users")
         .select("id")
         .eq("phone", e164PhoneNumber)
         .maybeSingle();
@@ -103,8 +111,8 @@ export async function POST(request: Request) {
 
     const hashedPassword = await hash(password, 10);
 
-    const { data: newUser, error: insertError } = await supabase
-      .from("users")
+    const { data: newUser, error: insertError } = await database
+      .collection("users")
       .insert({
         name: name.trim(),
         phone: e164PhoneNumber,
@@ -117,7 +125,7 @@ export async function POST(request: Request) {
 
     if (insertError) {
       console.error("User insert failed:", insertError);
-      if (insertError.code === "23505") {
+      if (insertError.code === 11000) {
         const duplicatePhone = /phone/i.test(insertError.message || "");
         return NextResponse.json(
           {
@@ -138,8 +146,8 @@ export async function POST(request: Request) {
     const token = crypto.randomBytes(32).toString("hex");
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-    const { error: tokenError } = await supabase
-      .from("email_verification_tokens")
+    const { error: tokenError } = await database
+      .collection("email_verification_tokens")
       .insert({
         user_id: newUser.id,
         token,

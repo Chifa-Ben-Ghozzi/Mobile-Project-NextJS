@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import { isMissingVehicleSchema, parseVehicleInput, vehicleMigrationMessage } from "@/lib/vehicle";
 
 export async function GET() {
@@ -10,8 +10,8 @@ export async function GET() {
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    const { data: vehicles, error } = await supabase
-      .from("vehicles")
+    const { data: vehicles, error } = await database
+      .collection("vehicles")
       .select("*")
       .eq("user_id", session.user.id)
       .order("created_at", { ascending: false });
@@ -34,8 +34,8 @@ export async function POST(request: Request) {
   if ("error" in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
   try {
-    const { data: vehicle, error } = await supabase
-      .from("vehicles")
+    const { data: vehicle, error } = await database
+      .collection("vehicles")
       .insert({ ...parsed.vehicle, user_id: session.user.id })
       .select()
       .single();

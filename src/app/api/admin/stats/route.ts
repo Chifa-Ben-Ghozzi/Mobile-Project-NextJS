@@ -1,22 +1,22 @@
 import { NextResponse } from "next/server";
 
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function GET() {
   try {
-    const { data: users, error: usersError } = await supabase
-      .from("users")
+    const { data: users, error: usersError } = await database
+      .collection("users")
       .select("count", { count: "exact" });
 
-    const { data: rides, error: ridesError } = await supabase
-      .from("rides")
+    const { data: rides, error: ridesError } = await database
+      .collection("rides")
       .select("count", { count: "exact" });
 
-    const { data: contacts, error: contactsError } = await supabase
-      .from("contacts")
+    const { data: contacts, error: contactsError } = await database
+      .collection("contacts")
       .select("count", { count: "exact" });
 
     if (usersError || ridesError || contactsError) {

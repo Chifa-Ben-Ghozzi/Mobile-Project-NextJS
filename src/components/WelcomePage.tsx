@@ -2,7 +2,6 @@
 
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-import { createClient } from "@supabase/supabase-js";
 import { motion, useScroll, useTransform } from "framer-motion";
 import {
   Car,
@@ -171,19 +170,14 @@ export default function WelcomePage() {
   // Replace the fetchApprovedReviews function with this new implementation
   const fetchApprovedReviews = async () => {
     try {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-      if (!supabaseUrl || !supabaseAnonKey) {
-        throw new Error("Missing Supabase environment variables");
+      const response = await fetch("/api/reviews?approved=true", { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error(`Failed to load approved reviews (${response.status}).`);
       }
-
-      const supabase = createClient(supabaseUrl, supabaseAnonKey);
-      const { data, error } = await supabase.rpc("get_approved_reviews");
-
-      if (error) throw error;
-      return data || [];
-    } catch {
+      const { reviews } = await response.json();
+      return reviews;
+    } catch (error) {
+      console.error("Failed to load approved reviews:", error);
       return [];
     }
   };

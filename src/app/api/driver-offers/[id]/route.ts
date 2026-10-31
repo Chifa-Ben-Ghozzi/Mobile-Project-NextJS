@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import {
   driverOfferMigrationMessage,
   isMissingDriverOfferSchema,
@@ -30,8 +30,8 @@ export async function PUT(request: Request, { params }: RouteProps) {
   if ("error" in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
   try {
-    const { data: vehicle, error: vehicleError } = await supabase
-      .from("vehicles")
+    const { data: vehicle, error: vehicleError } = await database
+      .collection("vehicles")
       .select("id,user_id,make_model,year,color,seats,vehicle_type,pet_policy,smoking_policy,accessibility_features")
       .eq("id", parsed.offer.vehicle_id)
       .eq("user_id", session.user.id)
@@ -42,8 +42,8 @@ export async function PUT(request: Request, { params }: RouteProps) {
       return NextResponse.json({ error: "Choose one of your active cars." }, { status: 400 });
     }
 
-    const { data: offer, error } = await supabase
-      .from("driver_offers")
+    const { data: offer, error } = await database
+      .collection("driver_offers")
       .update({ ...parsed.offer, vehicle_snapshot: vehicle })
       .eq("id", id)
       .eq("driver_id", session.user.id)
@@ -70,8 +70,8 @@ export async function DELETE(_request: Request, { params }: RouteProps) {
   if (!isUuid(id)) return NextResponse.json({ error: "Invalid offer ID." }, { status: 400 });
 
   try {
-    const { data: offer, error } = await supabase
-      .from("driver_offers")
+    const { data: offer, error } = await database
+      .collection("driver_offers")
       .delete()
       .eq("id", id)
       .eq("driver_id", session.user.id)

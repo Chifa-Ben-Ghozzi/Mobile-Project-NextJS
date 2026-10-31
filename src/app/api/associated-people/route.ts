@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -41,8 +41,8 @@ export async function GET() {
   }
 
   try {
-    const { data, error } = await supabase
-      .from("associated_people")
+    const { data, error } = await database
+      .collection("associated_people")
       .select("*")
       .eq("user_id", userId);
 
@@ -88,8 +88,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Name and relationship are required" }, { status: 400 });
     }
 
-    const { data, error } = await supabase
-      .from("associated_people")
+    const { data, error } = await database
+      .collection("associated_people")
       .insert({ user_id: session.user.id, name, relationship })
       .select()
       .single();
@@ -150,8 +150,8 @@ export async function DELETE(request: Request) {
   }
 
   try {
-    const { error } = await supabase
-      .from("associated_people")
+    const { error } = await database
+      .collection("associated_people")
       .delete()
       .eq("id", id)
       .eq("user_id", session.user.id);

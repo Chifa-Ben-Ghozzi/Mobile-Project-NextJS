@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 
 export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -8,8 +8,8 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
   const { name, email, phone, isVerified } = await request.json();
 
   try {
-    const { data, error } = await supabase
-      .from("users")
+    const { data, error } = await database
+      .collection("users")
       .update({ name, email, phone, is_verified: isVerified })
       .eq("id", id)
       .select();
@@ -29,7 +29,7 @@ export async function DELETE(request: Request, props: { params: Promise<{ id: st
   const { id } = params;
 
   try {
-    const { error } = await supabase.from("users").delete().eq("id", id);
+    const { error } = await database.collection("users").delete().eq("id", id);
 
     if (error) {
       throw error;

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import { isMissingRideCriteriaSchema, parseRideCriteria } from "@/lib/rideCriteria";
 import { normalizeRideStatus } from "@/lib/rideStatus";
 import type { RideData } from "@/types";
@@ -25,8 +25,8 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
   const userId = session.user.id;
   try {
     // Fetch the current ride data
-    const { data: currentRide, error: fetchError } = await supabase
-      .from("rides")
+    const { data: currentRide, error: fetchError } = await database
+      .collection("rides")
       .select("*")
       .eq("id", rideId)
       .single();
@@ -42,8 +42,8 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     }
 
     // Update the ride
-    const { data: updatedRide, error: updateError } = await supabase
-      .from("rides")
+    const { data: updatedRide, error: updateError } = await database
+      .collection("rides")
       .update({ ...updatedRideData, is_edited: true })
       .eq("id", rideId)
       .select()

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -8,8 +8,8 @@ export const revalidate = 0;
 export async function GET() {
   try {
     // Get total bug reports count
-    const { count: totalBugs, error: totalError } = await supabase
-      .from("bug_reports")
+    const { count: totalBugs, error: totalError } = await database
+      .collection("bug_reports")
       .select("*", { count: "exact" });
 
     if (totalError) {
@@ -29,8 +29,8 @@ export async function GET() {
     }
 
     // Get open bugs count (new + in_progress)
-    const { count: openBugs, error: openError } = await supabase
-      .from("bug_reports")
+    const { count: openBugs, error: openError } = await database
+      .collection("bug_reports")
       .select("*", { count: "exact" })
       .in("status", ["new", "in_progress"]);
 
@@ -51,14 +51,14 @@ export async function GET() {
     }
 
     // Get bugs by severity
-    const { data: severityData, error: severityError } = await supabase.rpc(
+    const { data: severityData, error: severityError } = await database.rpc(
       "count_bug_reports_by_severity"
     );
 
     if (severityError) {
       // Fallback if RPC function doesn't exist
-      const { data: fallbackSeverityData, error: fallbackError } = await supabase
-        .from("bug_reports")
+      const { data: fallbackSeverityData, error: fallbackError } = await database
+        .collection("bug_reports")
         .select("severity");
 
       if (fallbackError) {
@@ -93,8 +93,8 @@ export async function GET() {
       }));
 
       // Get bugs by status
-      const { data: statusData, error: statusError } = await supabase
-        .from("bug_reports")
+      const { data: statusData, error: statusError } = await database
+        .collection("bug_reports")
         .select("status");
 
       if (statusError) {
@@ -148,7 +148,7 @@ export async function GET() {
     }
 
     // Get bugs by status
-    const { data: statusData, error: statusError } = await supabase.rpc(
+    const { data: statusData, error: statusError } = await database.rpc(
       "count_bug_reports_by_status"
     );
 

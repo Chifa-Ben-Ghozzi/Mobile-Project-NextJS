@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import {
   driverOfferMigrationMessage,
   isMissingDriverOfferSchema,
@@ -17,8 +17,8 @@ export async function GET() {
   }
 
   try {
-    const { data: offers, error } = await supabase
-      .from("driver_offers")
+    const { data: offers, error } = await database
+      .collection("driver_offers")
       .select("*")
       .or(`status.eq.active,driver_id.eq.${session.user.id}`)
       .order("departure_time", { ascending: true })
@@ -27,7 +27,7 @@ export async function GET() {
 
     const driverIds = Array.from(new Set(offers.map((offer) => offer.driver_id).filter(isUuid)));
     const { data: drivers, error: driversError } = driverIds.length
-      ? await supabase.from("users").select("id,name").in("id", driverIds)
+      ? await database.collection("users").select("id,name").in("id", driverIds)
       : { data: [], error: null };
     if (driversError) throw driversError;
     const names = new Map(drivers.map((driver) => [driver.id, driver.name]));
@@ -60,8 +60,8 @@ export async function POST(request: Request) {
   if ("error" in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
   try {
-    const { data: vehicle, error: vehicleError } = await supabase
-      .from("vehicles")
+    const { data: vehicle, error: vehicleError } = await database
+      .collection("vehicles")
       .select("id,user_id,make_model,year,color,seats,vehicle_type,pet_policy,smoking_policy,accessibility_features")
       .eq("id", parsed.offer.vehicle_id)
       .eq("user_id", session.user.id)
@@ -72,8 +72,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Choose one of your active cars." }, { status: 400 });
     }
 
-    const { data: offer, error } = await supabase
-      .from("driver_offers")
+    const { data: offer, error } = await database
+      .collection("driver_offers")
       .insert({
         ...parsed.offer,
         driver_id: session.user.id,

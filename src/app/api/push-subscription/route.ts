@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { error } = await supabase.from("push_subscriptions").upsert(
+    const { error } = await database.collection("push_subscriptions").upsert(
       {
         user_id: userId,
         device_id: deviceId,
@@ -87,8 +87,8 @@ export async function DELETE(request: Request) {
   }
 
   try {
-    const { error } = await supabase
-      .from("push_subscriptions")
+    const { error } = await database
+      .collection("push_subscriptions")
       .delete()
       .match({ user_id: userId, device_id: deviceId });
 

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 
 export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
   try {
@@ -16,8 +16,8 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     }
 
     // Check if bug report exists
-    const { data: existingReport, error: reportError } = await supabase
-      .from("bug_reports")
+    const { data: existingReport, error: reportError } = await database
+      .collection("bug_reports")
       .select("*")
       .eq("id", bugReportId)
       .single();
@@ -27,8 +27,8 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     }
 
     // Update bug report
-    const { data: updatedReport, error } = await supabase
-      .from("bug_reports")
+    const { data: updatedReport, error } = await database
+      .collection("bug_reports")
       .update({
         status,
         admin_notes: adminNotes,
@@ -44,7 +44,7 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
 
     // Notify user about the status change
 
-    await supabase.from("notifications").insert({
+    await database.collection("notifications").insert({
       user_id: existingReport.user_id,
       message: `Your bug report "${existingReport.title}" has been updated to ${status}`,
       type: "bug_report_update",
@@ -63,8 +63,8 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
     const bugReportId = params.id;
 
     // Get bug report details
-    const { data: bugReport, error } = await supabase
-      .from("bug_reports")
+    const { data: bugReport, error } = await database
+      .collection("bug_reports")
       .select(
         `
         *,

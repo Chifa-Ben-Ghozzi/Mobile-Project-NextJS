@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth/next";
 
 import { authOptions } from "@/lib/auth";
 import { getUserContacts } from "@/lib/contactService";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import { normalizeRideStatus } from "@/lib/rideStatus";
 import { generateETag, isETagMatch } from "@/utils/etag";
 
@@ -40,8 +40,8 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const { data: ride, error: rideError } = await supabase
-      .from("rides")
+    const { data: ride, error: rideError } = await database
+      .collection("rides")
       .select("*")
       .eq("id", rideId)
       .single();
@@ -131,8 +131,8 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const { data: requester, error: requesterError } = await supabase
-      .from("users")
+    const { data: requester, error: requesterError } = await database
+      .collection("users")
       .select("name")
       .eq("id", ride.requester_id)
       .maybeSingle();

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import { sendImmediateNotification } from "@/lib/pushNotificationService";
 import { isRideStatusConstraintError, normalizeRideStatus } from "@/lib/rideStatus";
 import { isMissingVehicleSchema, vehicleMigrationMessage } from "@/lib/vehicle";
@@ -20,8 +20,8 @@ export async function POST(request: Request) {
 
   try {
     // Get the ride details
-    const { data: ride, error: rideError } = await supabase
-      .from("rides")
+    const { data: ride, error: rideError } = await database
+      .collection("rides")
       .select("*")
       .eq("id", rideId)
       .single();
@@ -34,16 +34,16 @@ export async function POST(request: Request) {
     }
 
     // Update the ride
-    let { data: updatedRide, error: updateError } = await supabase
-      .from("rides")
+    let { data: updatedRide, error: updateError } = await database
+      .collection("rides")
       .update({ accepter_id: null, status: "pending", offered_vehicle: null })
       .eq("id", rideId)
       .select()
       .single();
 
     if (isRideStatusConstraintError(updateError)) {
-      ({ data: updatedRide, error: updateError } = await supabase
-        .from("rides")
+      ({ data: updatedRide, error: updateError } = await database
+        .collection("rides")
         .update({ accepter_id: null, status: "available", offered_vehicle: null })
         .eq("id", rideId)
         .select()
@@ -53,8 +53,8 @@ export async function POST(request: Request) {
     if (updateError) throw updateError;
 
     // Get the accepter's name
-    const { data: accepter, error: accepterError } = await supabase
-      .from("users")
+    const { data: accepter, error: accepterError } = await database
+      .collection("users")
       .select("name")
       .eq("id", userId)
       .single();
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
     } catch (notificationError) {
       console.error(`Ride ${rideId} offer was cancelled, but push notification failed:`, notificationError);
     }
-    const { error: notificationError } = await supabase.from("notifications").insert({
+    const { error: notificationError } = await database.collection("notifications").insert({
       user_id: ride.requester_id,
       message,
       type: "rideCancelled",

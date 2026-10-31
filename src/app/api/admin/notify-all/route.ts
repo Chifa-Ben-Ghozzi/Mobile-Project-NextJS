@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import { sendPushNotification } from "@/lib/pushNotificationService";
 
 export async function POST(request: Request) {
@@ -8,15 +8,15 @@ export async function POST(request: Request) {
 
   try {
     // Fetch all users
-    const { data: users, error: usersError } = await supabase.from("users").select("id");
+    const { data: users, error: usersError } = await database.collection("users").select("id");
 
     if (usersError) {
       throw usersError;
     }
 
     // Fetch all push subscriptions
-    const { data: subscriptions, error: subscriptionsError } = await supabase
-      .from("push_subscriptions")
+    const { data: subscriptions, error: subscriptionsError } = await database
+      .collection("push_subscriptions")
       .select("id, user_id, subscription");
 
     if (subscriptionsError) {
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
 
     // Remove expired subscriptions
     if (expiredSubscriptions.length > 0) {
-      await supabase.from("push_subscriptions").delete().in("id", expiredSubscriptions);
+      await database.collection("push_subscriptions").delete().in("id", expiredSubscriptions);
     }
 
     // Create notifications in the database
@@ -48,8 +48,8 @@ export async function POST(request: Request) {
       related_id: null, // Admin notifications typically don't have a related entity
     }));
 
-    const { error: notificationsError } = await supabase
-      .from("notifications")
+    const { error: notificationsError } = await database
+      .collection("notifications")
       .insert(notifications);
 
     if (notificationsError) {

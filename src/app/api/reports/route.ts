@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import type { ReportFormData } from "@/types";
 
 export async function POST(request: Request) {
@@ -36,8 +36,8 @@ export async function POST(request: Request) {
 
     // Check if ride exists if reporting a ride
     if (data.report_type === "ride" && data.ride_id) {
-      const { data: rideData, error: rideError } = await supabase
-        .from("rides")
+      const { data: rideData, error: rideError } = await database
+        .collection("rides")
         .select("id")
         .eq("id", data.ride_id)
         .single();
@@ -48,8 +48,8 @@ export async function POST(request: Request) {
     }
 
     // Check if user exists
-    const { data: userData, error: userError } = await supabase
-      .from("users")
+    const { data: userData, error: userError } = await database
+      .collection("users")
       .select("id, name")
       .eq("id", data.reported_id)
       .single();
@@ -59,8 +59,8 @@ export async function POST(request: Request) {
     }
 
     // Get reporter name
-    const { data: reporterData, error: reporterError } = await supabase
-      .from("users")
+    const { data: reporterData, error: reporterError } = await database
+      .collection("users")
       .select("name")
       .eq("id", reporterId)
       .single();
@@ -70,8 +70,8 @@ export async function POST(request: Request) {
     }
 
     // Insert report into database
-    const { data: report, error } = await supabase
-      .from("reports")
+    const { data: report, error } = await database
+      .collection("reports")
       .insert({
         reporter_id: reporterId,
         reported_id: data.reported_id,

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -45,8 +45,8 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
   }
 
   try {
-    const { data, error } = await supabase
-      .from("push_subscriptions")
+    const { data, error } = await database
+      .collection("push_subscriptions")
       .select("enabled")
       .eq("user_id", id)
       .eq("device_id", deviceId)
@@ -103,8 +103,8 @@ export async function POST(request: Request, props: { params: Promise<{ id: stri
   }
 
   try {
-    const { data, error } = await supabase
-      .from("push_subscriptions")
+    const { data, error } = await database
+      .collection("push_subscriptions")
       .update({ enabled })
       .eq("user_id", id)
       .eq("device_id", deviceId)

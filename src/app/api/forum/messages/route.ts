@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import { forumMigrationMessage, isMissingForumSchema, parseForumMessage } from "@/lib/forum";
 import { isUuid } from "@/lib/uuid";
 
@@ -13,8 +13,8 @@ export async function GET() {
   }
 
   try {
-    const { data: messages, error } = await supabase
-      .from("forum_messages")
+    const { data: messages, error } = await database
+      .collection("forum_messages")
       .select("id,user_id,content,created_at,updated_at")
       .order("created_at", { ascending: false })
       .limit(100);
@@ -25,9 +25,9 @@ export async function GET() {
     const [{ data: users, error: usersError }, { data: reactions, error: reactionsError }] =
       messageIds.length
         ? await Promise.all([
-            supabase.from("users").select("id,name").in("id", userIds),
-            supabase
-              .from("forum_message_reactions")
+            database.collection("users").select("id,name").in("id", userIds),
+            database
+              .collection("forum_message_reactions")
               .select("message_id,user_id,emoji")
               .in("message_id", messageIds),
           ])
@@ -87,8 +87,8 @@ export async function POST(request: Request) {
   if ("error" in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
   try {
-    const { data: message, error } = await supabase
-      .from("forum_messages")
+    const { data: message, error } = await database
+      .collection("forum_messages")
       .insert({ ...parsed, user_id: session.user.id })
       .select("id,user_id,content,created_at,updated_at")
       .single();

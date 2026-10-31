@@ -2,14 +2,14 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import { validateReclamationInput } from "@/lib/reclamation";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 async function getOwnedPendingReclamation(id: string, userId: string) {
-  return supabase
-    .from("reclamations")
+  return database
+    .collection("reclamations")
     .select("id")
     .eq("id", id)
     .eq("user_id", userId)
@@ -45,8 +45,8 @@ export async function PUT(request: Request, { params }: RouteContext) {
   }
 
   const { data: ride, error: rideError } = validation.value.ride_id
-    ? await supabase
-        .from("rides")
+    ? await database
+        .collection("rides")
         .select("id")
         .eq("id", validation.value.ride_id)
         .or(`requester_id.eq.${session.user.id},accepter_id.eq.${session.user.id}`)
@@ -64,8 +64,8 @@ export async function PUT(request: Request, { params }: RouteContext) {
     );
   }
 
-  const { data, error } = await supabase
-    .from("reclamations")
+  const { data, error } = await database
+    .collection("reclamations")
     .update(validation.value)
     .eq("id", id)
     .eq("user_id", session.user.id)
@@ -94,8 +94,8 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
   }
 
   const { id } = await params;
-  const { data, error } = await supabase
-    .from("reclamations")
+  const { data, error } = await database
+    .collection("reclamations")
     .delete()
     .eq("id", id)
     .eq("user_id", session.user.id)

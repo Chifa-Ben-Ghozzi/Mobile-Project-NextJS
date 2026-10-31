@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import type { BugReportFormData } from "@/types";
 
 export async function POST(request: Request) {
@@ -27,8 +27,8 @@ export async function POST(request: Request) {
     }
 
     // Get user name for notifications
-    const { data: userData, error: userError } = await supabase
-      .from("users")
+    const { data: userData, error: userError } = await database
+      .collection("users")
       .select("name")
       .eq("id", userId)
       .single();
@@ -38,8 +38,8 @@ export async function POST(request: Request) {
     }
 
     // Insert bug report into database
-    const { data: bugReport, error } = await supabase
-      .from("bug_reports")
+    const { data: bugReport, error } = await database
+      .collection("bug_reports")
       .insert({
         user_id: userId,
         title: data.title,

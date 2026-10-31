@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import { sendImmediateNotification } from "@/lib/pushNotificationService";
 
 export async function POST(request: Request) {
@@ -18,8 +18,8 @@ export async function POST(request: Request) {
 
   try {
     // Get the ride details
-    const { data: ride, error: rideError } = await supabase
-      .from("rides")
+    const { data: ride, error: rideError } = await database
+      .collection("rides")
       .select("*")
       .eq("id", rideId)
       .single();
@@ -35,8 +35,8 @@ export async function POST(request: Request) {
     }
 
     // Update the ride
-    const { data: updatedRide, error: updateError } = await supabase
-      .from("rides")
+    const { data: updatedRide, error: updateError } = await database
+      .collection("rides")
       .update({ status: "cancelled" })
       .eq("id", rideId)
       .select()
@@ -47,8 +47,8 @@ export async function POST(request: Request) {
     // If there's an accepter, notify them
     if (ride.accepter_id) {
       // Get the requester's name
-      const { data: requester, error: requesterError } = await supabase
-        .from("users")
+      const { data: requester, error: requesterError } = await database
+        .collection("users")
         .select("name")
         .eq("id", userId)
         .single();
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
       );
 
       // Create a notification in the database
-      const { error: notificationError } = await supabase.from("notifications").insert({
+      const { error: notificationError } = await database.collection("notifications").insert({
         user_id: ride.accepter_id,
         message: `${requester.name} has cancelled their ride request from ${ride.from_location} to ${ride.to_location}`,
         type: "rideCancelled",

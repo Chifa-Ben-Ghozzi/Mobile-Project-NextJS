@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -26,8 +26,8 @@ export async function GET() {
 
   try {
     // Count completed rides offered by the user
-    const { count: ridesOffered, error: offeredError } = await supabase
-      .from("rides")
+    const { count: ridesOffered, error: offeredError } = await database
+      .collection("rides")
       .select("*", { count: "exact", head: true })
       .eq("accepter_id", userId)
       .eq("status", "completed");
@@ -35,8 +35,8 @@ export async function GET() {
     if (offeredError) throw offeredError;
 
     // Count completed rides requested by the user
-    const { count: ridesRequested, error: requestedError } = await supabase
-      .from("rides")
+    const { count: ridesRequested, error: requestedError } = await database
+      .collection("rides")
       .select("*", { count: "exact", head: true })
       .eq("requester_id", userId)
       .eq("status", "completed");

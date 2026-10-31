@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 
 const USERS_PER_PAGE = 10;
 
@@ -10,12 +10,12 @@ export async function GET(request: NextRequest) {
   const search = searchParams.get("search") || "";
 
   try {
-    let query = supabase
-      .from("users")
+    let query = database
+      .collection("users")
       .select("id, name, email, phone, is_verified", { count: "exact" });
 
     if (search) {
-      query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
+      query = query.orIlike(["name", "email", "phone"], search);
     }
 
     const {

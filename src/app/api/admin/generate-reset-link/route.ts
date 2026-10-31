@@ -2,7 +2,7 @@ import crypto from "crypto";
 
 import { NextResponse } from "next/server";
 
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 
 export async function POST(request: Request) {
   try {
@@ -13,8 +13,8 @@ export async function POST(request: Request) {
     }
 
     // Check if the user exists
-    const { data: user, error: userError } = await supabase
-      .from("users")
+    const { data: user, error: userError } = await database
+      .collection("users")
       .select("id, email")
       .eq("id", userId)
       .single();
@@ -29,10 +29,10 @@ export async function POST(request: Request) {
     expiresAt.setHours(expiresAt.getHours() + 24); // Token expires in 24 hours for admin-generated links
 
     // Delete any existing tokens for this user
-    await supabase.from("password_reset_tokens").delete().eq("user_id", userId);
+    await database.collection("password_reset_tokens").delete().eq("user_id", userId);
 
     // Insert the new token
-    const { error: insertError } = await supabase.from("password_reset_tokens").insert({
+    const { error: insertError } = await database.collection("password_reset_tokens").insert({
       user_id: userId,
       token: resetToken,
       expires_at: expiresAt.toISOString(),

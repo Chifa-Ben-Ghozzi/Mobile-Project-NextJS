@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth/next";
 
 import { authOptions } from "@/lib/auth";
 import { getUserContacts } from "@/lib/contactService";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import type { User, Contact } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -48,7 +48,7 @@ export async function GET(request: Request) {
   try {
     // Search for users by name or phone number (partial matches)
     // Using unaccent to ignore accents and diacritical marks
-    const { data: users, error: usersError } = await supabase.rpc("search_users_with_unaccent", {
+    const { data: users, error: usersError } = await database.rpc("search_users_with_unaccent", {
       search_query: query.toLowerCase(),
       current_user_id: userId,
       limit_count: 7,

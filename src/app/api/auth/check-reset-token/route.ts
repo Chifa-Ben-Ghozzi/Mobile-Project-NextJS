@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -11,8 +11,8 @@ export async function GET(request: Request) {
   }
 
   try {
-    const { data, error } = await supabase
-      .from("password_reset_tokens")
+    const { data, error } = await database
+      .collection("password_reset_tokens")
       .select("expires_at")
       .eq("token", token)
       .single();

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -8,8 +8,8 @@ export const revalidate = 0;
 export async function GET() {
   try {
     // Get total reports count
-    const { count: totalReports, error: totalError } = await supabase
-      .from("reports")
+    const { count: totalReports, error: totalError } = await database
+      .collection("reports")
       .select("*", { count: "exact", head: true });
 
     if (totalError) {
@@ -29,8 +29,8 @@ export async function GET() {
     }
 
     // Get pending reports count
-    const { count: pendingReports, error: pendingError } = await supabase
-      .from("reports")
+    const { count: pendingReports, error: pendingError } = await database
+      .collection("reports")
       .select("*", { count: "exact", head: true })
       .eq("status", "pending");
 
@@ -51,12 +51,12 @@ export async function GET() {
     }
 
     // Get reports by type
-    const { data: byType, error: typeError } = await supabase.rpc("count_reports_by_type");
+    const { data: byType, error: typeError } = await database.rpc("count_reports_by_type");
 
     if (typeError) {
       // Fallback if RPC function doesn't exist
-      const { data: manualTypeCount, error: manualTypeError } = await supabase
-        .from("reports")
+      const { data: manualTypeCount, error: manualTypeError } = await database
+        .collection("reports")
         .select("report_type, count")
         .select("report_type")
         .order("report_type");
@@ -94,8 +94,8 @@ export async function GET() {
       }));
 
       // Get reports by status
-      const { data: statusData, error: statusError } = await supabase
-        .from("reports")
+      const { data: statusData, error: statusError } = await database
+        .collection("reports")
         .select("status");
 
       if (statusError) {
@@ -131,8 +131,8 @@ export async function GET() {
       }));
 
       // Get reports by reason
-      const { data: reasonData, error: reasonError } = await supabase
-        .from("reports")
+      const { data: reasonData, error: reasonError } = await database
+        .collection("reports")
         .select("reason");
 
       if (reasonError) {
@@ -177,7 +177,7 @@ export async function GET() {
     }
 
     // Get reports by status
-    const { data: byStatus, error: statusError } = await supabase.rpc("count_reports_by_status");
+    const { data: byStatus, error: statusError } = await database.rpc("count_reports_by_status");
 
     if (statusError) {
       return NextResponse.json(
@@ -196,7 +196,7 @@ export async function GET() {
     }
 
     // Get reports by reason
-    const { data: byReason, error: reasonError } = await supabase.rpc("count_reports_by_reason");
+    const { data: byReason, error: reasonError } = await database.rpc("count_reports_by_reason");
 
     if (reasonError) {
       return NextResponse.json(

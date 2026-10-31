@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth/next";
 
 import { authOptions } from "@/lib/auth";
 import { getUserContacts } from "@/lib/contactService";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -62,8 +62,8 @@ export async function GET() {
     }
 
     // 3. Find contacts of the user's accepted contacts (potential mutual contacts)
-    const { data: contactsOfContacts, error: contactsOfContactsError } = await supabase
-      .from("contacts")
+    const { data: contactsOfContacts, error: contactsOfContactsError } = await database
+      .collection("contacts")
       .select("user_id, contact_id")
       .eq("status", "accepted")
       .or(
@@ -101,8 +101,8 @@ export async function GET() {
     }
 
     // 5. Fetch suggested user details
-    const { data: suggestedUsers, error: suggestedUsersError } = await supabase
-      .from("users")
+    const { data: suggestedUsers, error: suggestedUsersError } = await database
+      .collection("users")
       .select("*")
       .in("id", uniquePotentialContactIds);
 

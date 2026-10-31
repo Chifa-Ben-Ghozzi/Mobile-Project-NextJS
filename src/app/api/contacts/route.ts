@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import { sendImmediateNotification } from "@/lib/pushNotificationService";
 
 export async function POST(request: Request) {
@@ -25,8 +25,8 @@ export async function POST(request: Request) {
 
     const e164PhoneNumber = phoneNumber.format("E.164");
 
-    const { data: contactUser, error: contactUserError } = await supabase
-      .from("users")
+    const { data: contactUser, error: contactUserError } = await database
+      .collection("users")
       .select("id, name, phone")
       .eq("phone", e164PhoneNumber)
       .single();
@@ -35,8 +35,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Contact user not found" }, { status: 404 });
     }
 
-    const { data: existingContact } = await supabase
-      .from("contacts")
+    const { data: existingContact } = await database
+      .collection("contacts")
       .select("*")
       .or(
         `and(user_id.eq.${userId},contact_id.eq.${contactUser.id}),and(user_id.eq.${contactUser.id},contact_id.eq.${userId})`
@@ -47,8 +47,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Contact already exists" }, { status: 409 });
     }
 
-    const { data: newContact, error: insertError } = await supabase
-      .from("contacts")
+    const { data: newContact, error: insertError } = await database
+      .collection("contacts")
       .insert({
         user_id: userId,
         contact_id: contactUser.id,
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
       "You have a new contact request"
     );
 
-    const { error: notificationError } = await supabase.from("notifications").insert({
+    const { error: notificationError } = await database.collection("notifications").insert({
       user_id: contactUser.id,
       message: "You have a new contact request",
       type: "contactRequest",

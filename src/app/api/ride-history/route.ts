@@ -12,7 +12,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import { normalizeRideStatus } from "@/lib/rideStatus";
 
 export const dynamic = "force-dynamic";
@@ -47,8 +47,8 @@ export async function GET(req: NextRequest) {
     const date = url.searchParams.get("date") || "";
     const timePeriod = url.searchParams.get("timePeriod") || "";
 
-    let query = supabase
-      .from("rides")
+    let query = database
+      .collection("rides")
       .select("*", { count: "exact" })
       .or(`requester_id.eq.${session.user.id},accepter_id.eq.${session.user.id}`)
       .order("time", { ascending: false });

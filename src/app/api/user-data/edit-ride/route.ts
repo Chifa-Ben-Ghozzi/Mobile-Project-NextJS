@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import { generateETag, isETagMatch } from "@/utils/etag";
 
 export const dynamic = "force-dynamic";
@@ -41,8 +41,8 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const { data: ride, error } = await supabase
-      .from("rides")
+    const { data: ride, error } = await database
+      .collection("rides")
       .select("*")
       .eq("id", rideId)
       .eq("requester_id", userId)

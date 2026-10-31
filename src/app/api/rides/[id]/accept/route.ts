@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import { sendImmediateNotification } from "@/lib/pushNotificationService";
 import { isRideStatusConstraintError, normalizeRideStatus } from "@/lib/rideStatus";
 import { isMissingVehicleSchema, vehicleMigrationMessage } from "@/lib/vehicle";
@@ -29,8 +29,8 @@ export async function POST(request: Request) {
 
   try {
     // Get the ride details
-    const { data: ride, error: rideError } = await supabase
-      .from("rides")
+    const { data: ride, error: rideError } = await database
+      .collection("rides")
       .select("*")
       .eq("id", rideId)
       .single();
@@ -49,8 +49,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "This ride is no longer available to offer." }, { status: 409 });
     }
 
-    const { data: vehicle, error: vehicleError } = await supabase
-      .from("vehicles")
+    const { data: vehicle, error: vehicleError } = await database
+      .collection("vehicles")
       .select(
         "id,make_model,year,color,seats,vehicle_type,pet_policy,smoking_policy,accessibility_features,is_active"
       )
@@ -74,16 +74,16 @@ export async function POST(request: Request) {
       accessibility_features: vehicle.accessibility_features,
     };
 
-    const { data: accepter, error: accepterError } = await supabase
-      .from("users")
+    const { data: accepter, error: accepterError } = await database
+      .collection("users")
       .select("name")
       .eq("id", userId)
       .single();
     if (accepterError) throw accepterError;
 
     // Update the ride
-    let { data: updatedRide, error: updateError } = await supabase
-      .from("rides")
+    let { data: updatedRide, error: updateError } = await database
+      .collection("rides")
       .update({ accepter_id: userId, status: "accepted", offered_vehicle: offeredVehicle })
       .eq("id", rideId)
       .is("accepter_id", null)
@@ -92,8 +92,8 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (isRideStatusConstraintError(updateError)) {
-      ({ data: updatedRide, error: updateError } = await supabase
-        .from("rides")
+      ({ data: updatedRide, error: updateError } = await database
+        .collection("rides")
         .update({ accepter_id: userId, status: "available", offered_vehicle: offeredVehicle })
         .eq("id", rideId)
         .is("accepter_id", null)
@@ -113,7 +113,7 @@ export async function POST(request: Request) {
     } catch (notificationError) {
       console.error(`Ride ${rideId} was offered, but push notification failed:`, notificationError);
     }
-    const { error: notificationError } = await supabase.from("notifications").insert({
+    const { error: notificationError } = await database.collection("notifications").insert({
       user_id: ride.requester_id,
       message: notificationMessage,
       type: "rideAccepted",

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import { isUuid } from "@/lib/uuid";
 
 type RouteProps = { params: Promise<{ id: string }> };
@@ -19,8 +19,8 @@ export async function DELETE(_request: Request, { params }: RouteProps) {
   }
 
   try {
-    const { data: ride, error: rideError } = await supabase
-      .from("rides")
+    const { data: ride, error: rideError } = await database
+      .collection("rides")
       .select("id,requester_id,accepter_id,status")
       .eq("id", rideId)
       .maybeSingle();
@@ -45,8 +45,8 @@ export async function DELETE(_request: Request, { params }: RouteProps) {
       );
     }
 
-    const { data: deletedRide, error: deleteError } = await supabase
-      .from("rides")
+    const { data: deletedRide, error: deleteError } = await database
+      .collection("rides")
       .delete()
       .eq("id", rideId)
       .eq("requester_id", session.user.id)

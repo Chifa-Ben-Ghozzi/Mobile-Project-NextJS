@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -28,8 +28,8 @@ export async function GET(request: Request) {
   const userId = session.user.id;
 
   try {
-    const { data: notifications, error } = await supabase
-      .from("notifications")
+    const { data: notifications, error } = await database
+      .collection("notifications")
       .select("*")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
@@ -99,8 +99,8 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { error } = await supabase
-      .from("notifications")
+    const { error } = await database
+      .collection("notifications")
       .update({ is_read: true })
       .eq("user_id", userId)
       .in("id", notificationIds);

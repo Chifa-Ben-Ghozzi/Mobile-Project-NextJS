@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import { sendEmail, getPasswordChangeNotificationContent } from "@/lib/emailService";
 
 export async function POST(request: Request) {
@@ -25,8 +25,8 @@ export async function POST(request: Request) {
 
   try {
     // Fetch current user data
-    const { data: user, error: userError } = await supabase
-      .from("users")
+    const { data: user, error: userError } = await database
+      .collection("users")
       .select("*")
       .eq("id", userId)
       .single();
@@ -46,8 +46,8 @@ export async function POST(request: Request) {
     const hashedNewPassword = await hash(newPassword, 10);
 
     // Update password
-    const { error: updateError } = await supabase
-      .from("users")
+    const { error: updateError } = await database
+      .collection("users")
       .update({ password: hashedNewPassword })
       .eq("id", userId);
 

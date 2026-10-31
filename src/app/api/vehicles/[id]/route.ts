@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import { isMissingVehicleSchema, parseVehicleInput, vehicleMigrationMessage } from "@/lib/vehicle";
 
 type RouteProps = { params: Promise<{ id: string }> };
@@ -16,8 +16,8 @@ export async function PUT(request: Request, { params }: RouteProps) {
   if ("error" in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
   try {
-    const { data: vehicle, error } = await supabase
-      .from("vehicles")
+    const { data: vehicle, error } = await database
+      .collection("vehicles")
       .update(parsed.vehicle)
       .eq("id", id)
       .eq("user_id", session.user.id)
@@ -41,8 +41,8 @@ export async function DELETE(_request: Request, { params }: RouteProps) {
 
   const { id } = await params;
   try {
-    const { data: vehicle, error } = await supabase
-      .from("vehicles")
+    const { data: vehicle, error } = await database
+      .collection("vehicles")
       .delete()
       .eq("id", id)
       .eq("user_id", session.user.id)

@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { hash } from "bcrypt";
 import { NextResponse } from "next/server";
 
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import {
   sendEmail,
   getResetPasswordEmailContent,
@@ -16,8 +16,8 @@ export async function POST(request: Request) {
   const lowerCaseEmail = email.toLowerCase();
 
   try {
-    const { data: user, error: userError } = await supabase
-      .from("users")
+    const { data: user, error: userError } = await database
+      .collection("users")
       .select("id")
       .eq("email", lowerCaseEmail)
       .single();
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 1); // Token expires in 1 hour
 
-    const { error: insertError } = await supabase.from("password_reset_tokens").insert({
+    const { error: insertError } = await database.collection("password_reset_tokens").insert({
       user_id: user.id,
       token,
       expires_at: expiresAt.toISOString(),
@@ -53,8 +53,8 @@ export async function PUT(request: Request) {
   const { token, newPassword } = await request.json();
 
   try {
-    const { data: resetToken, error: tokenError } = await supabase
-      .from("password_reset_tokens")
+    const { data: resetToken, error: tokenError } = await database
+      .collection("password_reset_tokens")
       .select("user_id, created_by_admin")
       .eq("token", token)
       .gt("expires_at", new Date().toISOString())
@@ -66,16 +66,16 @@ export async function PUT(request: Request) {
 
     const hashedPassword = await hash(newPassword, 10);
 
-    const { error: updateError } = await supabase
-      .from("users")
+    const { error: updateError } = await database
+      .collection("users")
       .update({ password: hashedPassword })
       .eq("id", resetToken.user_id);
 
     if (updateError) throw updateError;
 
     // Get user information to send the notification
-    const { data: userData, error: userError } = await supabase
-      .from("users")
+    const { data: userData, error: userError } = await database
+      .collection("users")
       .select("name, email")
       .eq("id", resetToken.user_id)
       .single();
@@ -86,8 +86,8 @@ export async function PUT(request: Request) {
       await sendEmail(userData.email, "RideShare - Password Change Notification", emailContent);
     }
 
-    const { error: deleteError } = await supabase
-      .from("password_reset_tokens")
+    const { error: deleteError } = await database
+      .collection("password_reset_tokens")
       .delete()
       .eq("user_id", resetToken.user_id);
 

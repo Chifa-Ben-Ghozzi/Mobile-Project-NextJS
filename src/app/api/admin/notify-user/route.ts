@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import { sendImmediateNotification } from "@/lib/pushNotificationService";
 
 export async function POST(request: Request) {
@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     await sendImmediateNotification(userId, title, body);
 
     // Create a notification in the database
-    const { error: notificationError } = await supabase.from("notifications").insert({
+    const { error: notificationError } = await database.collection("notifications").insert({
       user_id: userId,
       message: `${title}: ${body}`,
       type: "admin_notification",

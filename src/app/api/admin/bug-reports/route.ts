@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 
 export async function GET(request: Request) {
   try {
@@ -12,8 +12,8 @@ export async function GET(request: Request) {
     const offset = (page - 1) * pageSize;
 
     // Build query
-    let query = supabase
-      .from("bug_reports")
+    let query = database
+      .collection("bug_reports")
       .select(
         `
         *,
@@ -28,8 +28,8 @@ export async function GET(request: Request) {
     }
 
     // Get total count for pagination
-    const { count: totalCount, error: countError } = await supabase
-      .from("bug_reports")
+    const { count: totalCount, error: countError } = await database
+      .collection("bug_reports")
       .select("*", { count: "exact" });
 
     if (countError) {

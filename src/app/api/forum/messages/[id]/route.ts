@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import { forumMigrationMessage, isMissingForumSchema, parseForumMessage } from "@/lib/forum";
 import { isUuid } from "@/lib/uuid";
 
@@ -26,8 +26,8 @@ export async function PUT(request: Request, { params }: RouteContext) {
   if ("error" in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
   try {
-    const { data, error } = await supabase
-      .from("forum_messages")
+    const { data, error } = await database
+      .collection("forum_messages")
       .update({ content: parsed.content, updated_at: new Date().toISOString() })
       .eq("id", id)
       .eq("user_id", session.user.id)
@@ -54,8 +54,8 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
   if (!isUuid(id)) return NextResponse.json({ error: "Invalid message ID." }, { status: 400 });
 
   try {
-    const { data, error } = await supabase
-      .from("forum_messages")
+    const { data, error } = await database
+      .collection("forum_messages")
       .delete()
       .eq("id", id)
       .eq("user_id", session.user.id)

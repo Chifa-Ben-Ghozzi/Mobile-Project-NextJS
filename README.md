@@ -41,7 +41,7 @@ RideShare is a modern, user-friendly web application that facilitates ride-shari
 - [React 18](https://reactjs.org/)
 - [TypeScript](https://www.typescriptlang.org/)
 - [Tailwind CSS](https://tailwindcss.com/)
-- [Supabase](https://supabase.io/) for database
+- [MongoDB](https://www.mongodb.com/) for database
 - [MapTiler](https://www.maptiler.com/) for map services
 - [Framer Motion](https://www.framer.com/motion/) for animations
 - [Lucide React](https://lucide.dev/) for icons
@@ -54,7 +54,7 @@ RideShare is a modern, user-friendly web application that facilitates ride-shari
 
 - Node.js 18.18 or later (Node.js 20 LTS recommended)
 - npm
-- A Supabase project
+- A MongoDB database (local or MongoDB Atlas)
 
 ### Installation
 
@@ -79,10 +79,11 @@ RideShare is a modern, user-friendly web application that facilitates ride-shari
 
    Fill in the values using your own service accounts:
 
-   - **Required:** `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXTAUTH_SECRET`, `JWT_SECRET`, `NEXT_PUBLIC_APP_URL`, `GMAIL_USER`, and `GMAIL_PASS`.
+   - **Required:** `MONGODB_URI`, `NEXTAUTH_SECRET`, `JWT_SECRET`, `NEXT_PUBLIC_APP_URL`, `GMAIL_USER`, and `GMAIL_PASS`.
+   - `MONGODB_DB` selects the database name and defaults to `ride_share`.
+   - Set `MONGODB_URI` to your MongoDB connection string (for example, `mongodb://127.0.0.1:27017` locally). Keep Atlas credentials private.
    - **Optional integrations:** `NEXT_PUBLIC_MAPTILER_KEY` enables maps; the VAPID keys enable push notifications; `NEXT_PUBLIC_CONTACT_EMAIL` sets the contact address; `GEMINI_API_KEY` enables AI-powered chatbot replies (`GEMINI_MODEL` defaults to `gemini-2.5-flash`).
    - Set `ADMIN_PASSWORD` if you need to use the admin dashboard.
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` is used by the welcome page. It is a public client key; never expose the service-role key.
 
    Generate separate random values for `NEXTAUTH_SECRET` and `JWT_SECRET` with:
 
@@ -92,9 +93,7 @@ RideShare is a modern, user-friendly web application that facilitates ride-shari
 
    Set `NEXT_PUBLIC_APP_URL` to `https://localhost:3000` for local development. Use a Gmail App Password for `GMAIL_PASS`. Never commit `.env.local` or share real credentials in the repository; each developer should use their own credentials.
 
-4. In the Supabase SQL editor, run [`database.sql`](./database.sql) against your development Supabase project to create or update the required tables and database functions. Avoid running it against a production database when setting up locally.
-
-   If the database was already initialized, run the updated SQL script to add the `reclamations` table.
+4. The application creates the required MongoDB indexes when it first connects. The legacy [`database.sql`](./database.sql) file is not used by the MongoDB-backed application. Existing Supabase data is not copied automatically.
 
 5. Start the development server:
 
@@ -118,7 +117,7 @@ The production server starts at `http://localhost:3000`. The repository does not
 
 Push the application source, public assets, `database.sql`, `package.json`, `package-lock.json`, `.env.example`, and this README. The lockfile keeps dependency installs consistent. Do not push `.env.local`, real API keys/passwords, `node_modules`, `.next`, or generated local certificates. These local files are excluded by `.gitignore`.
 
-After cloning and pulling the shared branch, each teammate should follow the installation steps above and configure their own `.env.local` and Supabase development project.
+After cloning and pulling the shared branch, each teammate should follow the installation steps above and configure their own `.env.local` and MongoDB database.
 
 ## Usage
 

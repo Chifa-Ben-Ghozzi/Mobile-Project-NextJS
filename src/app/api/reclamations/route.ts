@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import { validateReclamationInput } from "@/lib/reclamation";
 
 export async function GET() {
@@ -11,8 +11,8 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data, error } = await supabase
-    .from("reclamations")
+  const { data, error } = await database
+    .collection("reclamations")
     .select("*")
     .eq("user_id", session.user.id)
     .order("created_at", { ascending: false });
@@ -37,8 +37,8 @@ export async function POST(request: Request) {
   }
 
   if (validation.value.ride_id) {
-    const { data: ride, error: rideError } = await supabase
-      .from("rides")
+    const { data: ride, error: rideError } = await database
+      .collection("rides")
       .select("id")
       .eq("id", validation.value.ride_id)
       .or(`requester_id.eq.${session.user.id},accepter_id.eq.${session.user.id}`)
@@ -56,8 +56,8 @@ export async function POST(request: Request) {
     }
   }
 
-  const { data, error } = await supabase
-    .from("reclamations")
+  const { data, error } = await database
+    .collection("reclamations")
     .insert({ ...validation.value, user_id: session.user.id })
     .select()
     .single();

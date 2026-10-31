@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 
 export async function PUT(request: Request, props: { params: Promise<{ id: string }> }) {
   try {
@@ -16,8 +16,8 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     }
 
     // Check if report exists
-    const { data: existingReport, error: reportError } = await supabase
-      .from("reports")
+    const { data: existingReport, error: reportError } = await database
+      .collection("reports")
       .select("*")
       .eq("id", reportId)
       .single();
@@ -27,8 +27,8 @@ export async function PUT(request: Request, props: { params: Promise<{ id: strin
     }
 
     // Update report
-    const { data: updatedReport, error } = await supabase
-      .from("reports")
+    const { data: updatedReport, error } = await database
+      .collection("reports")
       .update({
         status,
         admin_notes: adminNotes,
@@ -54,8 +54,8 @@ export async function GET(request: Request) {
     const reportId = url.pathname.split("/").pop(); // Extracting the report ID from the URL
 
     // Get report details
-    const { data: report, error } = await supabase
-      .from("reports")
+    const { data: report, error } = await database
+      .collection("reports")
       .select(
         `
         *,

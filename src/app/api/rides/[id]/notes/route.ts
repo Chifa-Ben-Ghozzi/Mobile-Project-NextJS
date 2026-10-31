@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import { sendImmediateNotification } from "@/lib/pushNotificationService";
 
 export const dynamic = "force-dynamic";
@@ -13,8 +13,8 @@ export async function GET(request: Request) {
   const rideId = url.pathname.split("/").at(-2);
 
   try {
-    const { data: notes, error } = await supabase
-      .from("ride_notes")
+    const { data: notes, error } = await database
+      .collection("ride_notes")
       .select(
         `
     *,
@@ -75,8 +75,8 @@ export async function POST(request: Request) {
   const rideId = url.pathname.split("/").at(-2);
 
   try {
-    const { data: newNote, error: insertError } = await supabase
-      .from("ride_notes")
+    const { data: newNote, error: insertError } = await database
+      .collection("ride_notes")
       .insert({ ride_id: rideId, user_id: userId, note })
       .select(
         `
@@ -89,14 +89,14 @@ export async function POST(request: Request) {
     if (insertError) throw insertError;
 
     // Create a notification for the other user involved in the ride
-    const { data: ride } = await supabase.from("rides").select("*").eq("id", rideId).single();
+    const { data: ride } = await database.collection("rides").select("*").eq("id", rideId).single();
 
     if (ride) {
       const otherUserId = userId === ride.requester_id ? ride.accepter_id : ride.requester_id;
       if (otherUserId) {
         // Fetch the name of the user who added the note
-        const { data: noteAuthor, error: authorError } = await supabase
-          .from("users")
+        const { data: noteAuthor, error: authorError } = await database
+          .collection("users")
           .select("name")
           .eq("id", userId)
           .single();
@@ -108,7 +108,7 @@ export async function POST(request: Request) {
           "New Ride Message",
           `${noteAuthor.name} has added a new message to your ride from ${ride.from_location} to ${ride.to_location}: "${note}"`
         );
-        await supabase.from("notifications").insert({
+        await database.collection("notifications").insert({
           user_id: otherUserId,
           message: `${noteAuthor.name} has added a new message to your ride from ${ride.from_location} to ${ride.to_location}: "${note}"`,
           type: "newNote",
@@ -133,8 +133,8 @@ export async function PUT(request: Request) {
   }
   const userId = session.user.id;
   try {
-    const { data: updatedNote, error: updateError } = await supabase
-      .from("ride_notes")
+    const { data: updatedNote, error: updateError } = await database
+      .collection("ride_notes")
       .update({ note, is_edited: true })
       .eq("id", noteId)
       .eq("user_id", userId)
@@ -159,8 +159,8 @@ export async function DELETE(request: Request) {
   }
   const userId = session.user.id;
   try {
-    const { error: deleteError } = await supabase
-      .from("ride_notes")
+    const { error: deleteError } = await database
+      .collection("ride_notes")
       .update({ is_deleted: true })
       .eq("id", noteId)
       .eq("user_id", userId)
@@ -185,8 +185,8 @@ export async function PATCH(request: Request) {
   }
   const userId = session.user.id;
   try {
-    const { data: note, error: fetchError } = await supabase
-      .from("ride_notes")
+    const { data: note, error: fetchError } = await database
+      .collection("ride_notes")
       .select("seen_by")
       .eq("id", noteId)
       .single();
@@ -198,8 +198,8 @@ export async function PATCH(request: Request) {
       seenBy.push(userId);
     }
 
-    const { data: updatedNote, error: updateError } = await supabase
-      .from("ride_notes")
+    const { data: updatedNote, error: updateError } = await database
+      .collection("ride_notes")
       .update({ seen_by: seenBy })
       .eq("id", noteId)
       .select()

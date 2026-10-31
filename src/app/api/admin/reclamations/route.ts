@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 
 export async function GET(request: Request) {
   const status = new URL(request.url).searchParams.get("status");
-  let query = supabase
-    .from("reclamations")
+  let query = database
+    .collection("reclamations")
     .select("*, user:user_id(name,email), ride:ride_id(from_location,to_location,time)")
     .order("created_at", { ascending: false });
 

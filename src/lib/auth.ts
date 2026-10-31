@@ -4,7 +4,7 @@ import type { NextAuthOptions } from "next-auth";
 // eslint-disable-next-line import/no-named-as-default
 import CredentialsProvider from "next-auth/providers/credentials";
 
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -23,19 +23,24 @@ export const authOptions: NextAuthOptions = {
         const identifier = credentials.identifier.toLowerCase();
 
         if (identifier.includes("@")) {
-          query = supabase.from("users").select("*").eq("email", identifier).single();
+          query = database.collection("users").select("*").eq("email", identifier).single();
         } else {
           const phoneNumber = parsePhoneNumber(identifier, { defaultCountry: "PT" });
           if (!phoneNumber || !phoneNumber.isValid()) {
             return null;
           }
           const e164PhoneNumber = phoneNumber.format("E.164");
-          query = supabase.from("users").select("*").eq("phone", e164PhoneNumber).single();
+          query = database.collection("users").select("*").eq("phone", e164PhoneNumber).single();
         }
 
         const { data: user, error } = await query;
 
-        if (error || !user) {
+        if (error) {
+          console.error("Failed to look up login credentials:", error);
+          return null;
+        }
+
+        if (!user) {
           return null;
         }
 

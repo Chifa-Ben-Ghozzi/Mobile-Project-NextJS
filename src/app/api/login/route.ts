@@ -2,7 +2,7 @@ import { compare } from "bcrypt";
 import { parsePhoneNumber } from "libphonenumber-js";
 import { NextResponse } from "next/server";
 
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 
 export async function POST(request: Request) {
   const { identifier, password, loginMethod } = await request.json();
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     const lowerCaseIdentifier = identifier.toLowerCase();
 
     if (loginMethod === "email") {
-      query = supabase.from("users").select("*").eq("email", lowerCaseIdentifier).single();
+      query = database.collection("users").select("*").eq("email", lowerCaseIdentifier).single();
     } else if (loginMethod === "phone") {
       const phoneNumber = parsePhoneNumber(identifier, { defaultCountry: "PT" });
       if (!phoneNumber || !phoneNumber.isValid()) {
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
         );
       }
       const e164PhoneNumber = phoneNumber.format("E.164");
-      query = supabase.from("users").select("*").eq("phone", e164PhoneNumber).single();
+      query = database.collection("users").select("*").eq("phone", e164PhoneNumber).single();
     } else {
       return NextResponse.json(
         { error: "Invalid login method", code: "INVALID_LOGIN_METHOD" },

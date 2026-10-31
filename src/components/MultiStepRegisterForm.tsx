@@ -25,6 +25,8 @@ interface MultiStepRegisterFormProps {
   isLoading: boolean;
 }
 
+const MIN_PASSWORD_LENGTH = 6;
+
 export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegisterFormProps) {
   const [step, setStep] = useState(0);
   const [formData, setFormData] = useState({
@@ -58,6 +60,11 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
   };
 
   const handleNext = () => {
+    if (step === 2 && formData.password.length < MIN_PASSWORD_LENGTH) {
+      setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
+      return;
+    }
+
     if (isStepValid(step)) {
       if (step === 2 && formData.password !== formData.confirmPassword) {
         setError("Passwords do not match");
@@ -74,8 +81,16 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (formData.password.length < MIN_PASSWORD_LENGTH) {
+      setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
+      return;
+    }
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
+      return;
+    }
+    if (!agreedToTerms) {
+      setError("Please accept the Terms of Service and Privacy Policy");
       return;
     }
     try {
@@ -244,7 +259,10 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
             <Checkbox
               id="terms"
               checked={agreedToTerms}
-              onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+              onCheckedChange={(checked) => {
+                setAgreedToTerms(checked === true);
+                setError(null);
+              }}
             />
             <Label
               htmlFor="terms"

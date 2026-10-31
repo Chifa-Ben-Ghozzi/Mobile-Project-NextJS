@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import { forumMigrationMessage, isForumEmoji, isMissingForumSchema } from "@/lib/forum";
 import { isUuid } from "@/lib/uuid";
 
@@ -32,8 +32,8 @@ async function updateReaction(request: Request, context: RouteContext, remove: b
   if (!emoji) return NextResponse.json({ error: "Choose a valid reaction." }, { status: 400 });
 
   try {
-    const { data: message, error: messageError } = await supabase
-      .from("forum_messages")
+    const { data: message, error: messageError } = await database
+      .collection("forum_messages")
       .select("id")
       .eq("id", id)
       .maybeSingle();
@@ -41,14 +41,14 @@ async function updateReaction(request: Request, context: RouteContext, remove: b
     if (!message) return NextResponse.json({ error: "Message not found." }, { status: 404 });
 
     const query = remove
-      ? supabase
-          .from("forum_message_reactions")
+      ? database
+          .collection("forum_message_reactions")
           .delete()
           .eq("message_id", id)
           .eq("user_id", session.user.id)
           .eq("emoji", emoji)
-      : supabase
-          .from("forum_message_reactions")
+      : database
+          .collection("forum_message_reactions")
           .upsert(
             { message_id: id, user_id: session.user.id, emoji },
             { onConflict: "message_id,user_id,emoji", ignoreDuplicates: true }

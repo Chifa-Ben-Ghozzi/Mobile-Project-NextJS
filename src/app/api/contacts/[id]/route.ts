@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 
 export async function DELETE(request: Request) {
   const url = new URL(request.url);
@@ -22,8 +22,8 @@ export async function DELETE(request: Request) {
 
   try {
     // First, get the contact record to identify both users
-    const { data: contactData, error: contactError } = await supabase
-      .from("contacts")
+    const { data: contactData, error: contactError } = await database
+      .collection("contacts")
       .select("user_id, contact_id, status")
       .eq("id", contactId)
       .single();
@@ -52,8 +52,8 @@ export async function DELETE(request: Request) {
     // Only delete shared rides and related data if this is an accepted contact
     if (status === "accepted") {
       // 1. Find all rides between these two users
-      const { data: sharedRides, error: ridesError } = await supabase
-        .from("rides")
+      const { data: sharedRides, error: ridesError } = await database
+        .collection("rides")
         .select("id")
         .or(
           `and(requester_id.eq.${userId},accepter_id.eq.${otherUserId}),` +
@@ -73,8 +73,8 @@ export async function DELETE(request: Request) {
         deletedData.rides = rideIds.length;
 
         // 2a. Delete ride notes for these rides
-        const { data: deletedNotes, error: notesError } = await supabase
-          .from("ride_notes")
+        const { data: deletedNotes, error: notesError } = await database
+          .collection("ride_notes")
           .delete()
           .in("ride_id", rideIds)
           .select("id");
@@ -89,7 +89,7 @@ export async function DELETE(request: Request) {
         deletedData.notes = deletedNotes?.length || 0;
 
         // 2c. Delete the rides themselves
-        const { error: deleteRidesError } = await supabase.from("rides").delete().in("id", rideIds);
+        const { error: deleteRidesError } = await database.collection("rides").delete().in("id", rideIds);
 
         if (deleteRidesError) {
           return NextResponse.json(
@@ -101,8 +101,8 @@ export async function DELETE(request: Request) {
     }
 
     // 4. Delete the contact record
-    const { error: deleteContactError } = await supabase
-      .from("contacts")
+    const { error: deleteContactError } = await database
+      .collection("contacts")
       .delete()
       .eq("id", contactId);
 

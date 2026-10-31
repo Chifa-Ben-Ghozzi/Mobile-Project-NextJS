@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import { sendEmail, getWelcomeEmailContent } from "@/lib/emailService";
 
 export async function GET(request: Request) {
@@ -13,8 +13,8 @@ export async function GET(request: Request) {
 
   try {
     // Find the token in the database
-    const { data: tokenData, error: tokenError } = await supabase
-      .from("email_verification_tokens")
+    const { data: tokenData, error: tokenError } = await database
+      .collection("email_verification_tokens")
       .select("user_id, expires_at")
       .eq("token", token)
       .single();
@@ -29,8 +29,8 @@ export async function GET(request: Request) {
     }
 
     // Update user's verified status
-    const { error: updateError } = await supabase
-      .from("users")
+    const { error: updateError } = await database
+      .collection("users")
       .update({ is_verified: true })
       .eq("id", tokenData.user_id);
 
@@ -39,8 +39,8 @@ export async function GET(request: Request) {
     }
 
     // Get user's name for the welcome email
-    const { data: userData } = await supabase
-      .from("users")
+    const { data: userData } = await database
+      .collection("users")
       .select("name, email")
       .eq("id", tokenData.user_id)
       .single();
@@ -52,7 +52,7 @@ export async function GET(request: Request) {
     }
 
     // Delete the used token
-    await supabase.from("email_verification_tokens").delete().eq("token", token);
+    await database.collection("email_verification_tokens").delete().eq("token", token);
 
     return NextResponse.json({ message: "Email verified successfully" }, { status: 200 });
   } catch {

@@ -2,7 +2,7 @@ import crypto from "crypto";
 
 import { NextResponse } from "next/server";
 
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import { sendEmail, getVerificationEmailContent } from "@/lib/emailService";
 
 export async function POST(request: Request) {
@@ -24,8 +24,8 @@ export async function POST(request: Request) {
 
   try {
     // Find the user
-    const { data: user, error: userError } = await supabase
-      .from("users")
+    const { data: user, error: userError } = await database
+      .collection("users")
       .select("id, name, email, is_verified")
       .eq(loginMethod === "email" ? "email" : "phone", identifier.toLowerCase())
       .single();
@@ -44,11 +44,11 @@ export async function POST(request: Request) {
     expiresAt.setHours(expiresAt.getHours() + 24); // Token expires in 24 hours
 
     // Delete any existing tokens for this user
-    await supabase.from("email_verification_tokens").delete().eq("user_id", user.id);
+    await database.collection("email_verification_tokens").delete().eq("user_id", user.id);
 
     // Store new verification token
-    const { error: tokenError } = await supabase
-      .from("email_verification_tokens")
+    const { error: tokenError } = await database
+      .collection("email_verification_tokens")
       .insert({ user_id: user.id, token, expires_at: expiresAt.toISOString() });
 
     if (tokenError) {

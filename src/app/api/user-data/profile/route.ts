@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth/next";
 
 import { authOptions } from "@/lib/auth";
 import { getUserContacts } from "@/lib/contactService";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import { generateETag, isETagMatch } from "@/utils/etag";
 
 export const dynamic = "force-dynamic";
@@ -27,8 +27,8 @@ export async function GET(req: NextRequest) {
 
     const userId = session.user.id;
 
-    const { data: userData, error: userError } = await supabase
-      .from("users")
+    const { data: userData, error: userError } = await database
+      .collection("users")
       .select("id, name, email, phone, is_verified, created_at")
       .eq("id", userId)
       .single();
@@ -39,8 +39,8 @@ export async function GET(req: NextRequest) {
 
     if (contactsError) throw contactsError;
 
-    const { data: associatedPeople, error: associatedPeopleError } = await supabase
-      .from("associated_people")
+    const { data: associatedPeople, error: associatedPeopleError } = await database
+      .collection("associated_people")
       .select("*")
       .eq("user_id", userId);
 

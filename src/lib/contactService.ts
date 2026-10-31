@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import { isUuid } from "@/lib/uuid";
 
 type ContactUser = {
@@ -29,8 +29,8 @@ export async function getUserContacts(userId: string) {
     return { data: null, error: new Error("A valid user ID is required to load contacts.") };
   }
 
-  const { data: contacts, error: contactsError } = await supabase
-    .from("contacts")
+  const { data: contacts, error: contactsError } = await database
+    .collection("contacts")
     .select("*")
     .or(`user_id.eq.${userId},contact_id.eq.${userId}`);
 
@@ -53,8 +53,8 @@ export async function getUserContacts(userId: string) {
   const userIds = Array.from(
     new Set(validContacts.flatMap(({ user_id, contact_id }) => [user_id, contact_id]))
   );
-  const { data: users, error: usersError } = await supabase
-    .from("users")
+  const { data: users, error: usersError } = await database
+    .collection("users")
     .select("id, name, phone")
     .in("id", userIds);
 

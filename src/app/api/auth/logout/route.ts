@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/lib/auth";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 
 export async function POST(request: Request) {
   try {
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
 
     // If there's a subscription and deviceId, delete it from the database
     if (subscription && deviceId) {
-      await supabase.from("push_subscriptions").delete().match({
+      await database.collection("push_subscriptions").delete().match({
         user_id: session.user.id,
         device_id: deviceId,
       });

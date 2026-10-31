@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth/next";
 
 import { authOptions } from "@/lib/auth";
 import { getUserContacts } from "@/lib/contactService";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import { normalizeRideStatus } from "@/lib/rideStatus";
 import { isUuid } from "@/lib/uuid";
 import { generateETag, isETagMatch } from "@/utils/etag";
@@ -46,15 +46,15 @@ export async function GET(req: NextRequest) {
     }
 
     const [ownedRidesResult, openRidesResult] = await Promise.all([
-      supabase
-        .from("rides")
+      database
+        .collection("rides")
         .select("*")
         .or(rideConditions.join(","))
         .or("status.eq.pending,status.eq.available,status.eq.accepted,status.in.(completed,cancelled)")
         .order("created_at", { ascending: false })
         .limit(50),
-      supabase
-        .from("rides")
+      database
+        .collection("rides")
         .select("*")
         .or("status.eq.pending,status.eq.available")
         .order("created_at", { ascending: false })
@@ -74,7 +74,7 @@ export async function GET(req: NextRequest) {
 
     const requesterIds = Array.from(new Set(rides.map((ride) => ride.requester_id).filter(isUuid)));
     const { data: requesters, error: requestersError } = requesterIds.length
-      ? await supabase.from("users").select("id,name").in("id", requesterIds)
+      ? await database.collection("users").select("id,name").in("id", requesterIds)
       : { data: [], error: null };
     if (requestersError) throw requestersError;
     const requesterNames = new Map(requesters.map((requester) => [requester.id, requester.name]));

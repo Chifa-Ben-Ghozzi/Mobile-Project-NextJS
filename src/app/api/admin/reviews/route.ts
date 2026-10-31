@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function GET() {
   try {
-    const { data, error } = await supabase
-      .from("reviews")
+    const { data, error } = await database
+      .collection("reviews")
       .select("*")
       .order("created_at", { ascending: false });
 

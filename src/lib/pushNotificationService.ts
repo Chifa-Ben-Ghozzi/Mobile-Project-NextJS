@@ -1,6 +1,6 @@
 import webpush, { sendNotification, setVapidDetails, WebPushError } from "web-push";
 
-import { supabase } from "./db";
+import { database } from "./db";
 
 const vapidKeys = {
   publicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
@@ -32,8 +32,8 @@ export async function sendImmediateNotification(userId: string, title: string, b
   const oneWeekAgo = new Date();
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
-  const { data: subscriptionData, error: subscriptionError } = await supabase
-    .from("push_subscriptions")
+  const { data: subscriptionData, error: subscriptionError } = await database
+    .collection("push_subscriptions")
     .select("id, subscription, enabled, last_used")
     .eq("user_id", userId)
     .eq("enabled", true)
@@ -59,7 +59,7 @@ export async function sendImmediateNotification(userId: string, title: string, b
 
     // Remove expired subscriptions
     if (expiredSubscriptions.length > 0) {
-      await supabase.from("push_subscriptions").delete().in("id", expiredSubscriptions);
+      await database.collection("push_subscriptions").delete().in("id", expiredSubscriptions);
     }
   }
 }

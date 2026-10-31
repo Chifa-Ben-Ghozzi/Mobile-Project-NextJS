@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import { isReclamationStatus } from "@/lib/reclamation";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -24,8 +24,8 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   }
 
   const { id } = await params;
-  const { data, error } = await supabase
-    .from("reclamations")
+  const { data, error } = await database
+    .collection("reclamations")
     .update({
       status,
       admin_notes: typeof adminNotes === "string" ? adminNotes.trim() || null : null,
@@ -48,8 +48,8 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
 export async function DELETE(_request: Request, { params }: RouteContext) {
   const { id } = await params;
-  const { data, error } = await supabase
-    .from("reclamations")
+  const { data, error } = await database
+    .collection("reclamations")
     .delete()
     .eq("id", id)
     .select("id")

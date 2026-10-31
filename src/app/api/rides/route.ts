@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth/next";
 
 import { authOptions } from "@/lib/auth";
 import { getUserContacts } from "@/lib/contactService";
-import { supabase } from "@/lib/db";
+import { database } from "@/lib/db";
 import { sendImmediateNotification } from "@/lib/pushNotificationService";
 import { isMissingRideCriteriaSchema, parseRideCriteria } from "@/lib/rideCriteria";
 import { isRideStatusConstraintError, normalizeRideStatus } from "@/lib/rideStatus";
@@ -76,8 +76,8 @@ export async function POST(request: NextRequest) {
       price_per_seat: 0,
     };
     let insertData: Record<string, unknown> = rideData;
-    let { data: newRide, error: insertError } = await supabase
-      .from("rides")
+    let { data: newRide, error: insertError } = await database
+      .collection("rides")
       .insert(insertData)
       .select()
       .single();
@@ -96,8 +96,8 @@ export async function POST(request: NextRequest) {
         break;
       }
 
-      ({ data: newRide, error: insertError } = await supabase
-        .from("rides")
+      ({ data: newRide, error: insertError } = await database
+        .collection("rides")
         .insert(insertData)
         .select()
         .single());
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
         const message = `A new ride is available from your contact ${userName} from ${from_location} to ${to_location}`;
 
         try {
-          const { error: notificationError } = await supabase.from("notifications").insert({
+          const { error: notificationError } = await database.collection("notifications").insert({
             user_id: contactUserId,
             message,
             type: "newRide",
