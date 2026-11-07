@@ -212,7 +212,7 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
               <div className="relative">
                 <div className="h-2 rounded bg-gray-200">
                   <div
-                    className={`h-full rounded ${passwordStrength === "Strong" ? "bg-green-500" : passwordStrength === "Medium" ? "bg-yellow-500" : "bg-red-500"}`}
+                    className={`h-full rounded ${passwordStrength === "Strong" ? "bg-zinc-600" : passwordStrength === "Medium" ? "bg-zinc-400" : "bg-red-500"}`}
                     style={{
                       width:
                         passwordStrength === "Strong"
@@ -226,7 +226,7 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
                   />
                 </div>
                 <p
-                  className={`text-sm mt-1 ${passwordStrength === "Strong" ? "text-green-500" : passwordStrength === "Medium" ? "text-yellow-500" : "text-red-500"}`}
+                  className={`text-sm mt-1 ${passwordStrength === "Strong" ? "text-zinc-600 dark:text-zinc-300" : passwordStrength === "Medium" ? "text-zinc-500" : "text-red-500"}`}
                 >
                   {passwordStrength}
                 </p>

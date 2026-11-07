@@ -19,7 +19,7 @@ export async function GET() {
 
   if (error) {
     console.error("Failed to fetch user reclamations:", error);
-    return NextResponse.json({ error: "Failed to load reclamations" }, { status: 500 });
+    return NextResponse.json({ error: "Couldn't load support requests." }, { status: 500 });
   }
 
   return NextResponse.json({ reclamations: data });
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
 
   if (error) {
     console.error("Failed to create reclamation:", error);
-    return NextResponse.json({ error: "Failed to submit reclamation" }, { status: 500 });
+    return NextResponse.json({ error: "Couldn't send your support request." }, { status: 500 });
   }
 
   return NextResponse.json({ reclamation: data }, { status: 201 });

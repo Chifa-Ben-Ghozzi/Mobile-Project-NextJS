@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 
 import { authOptions } from "@/lib/auth";
@@ -6,12 +6,11 @@ import { getUserContacts } from "@/lib/contactService";
 import { database } from "@/lib/db";
 import { normalizeRideStatus } from "@/lib/rideStatus";
 import { isUuid } from "@/lib/uuid";
-import { generateETag, isETagMatch } from "@/utils/etag";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     if (!session || !session.user || !isUuid(session.user.id)) {
@@ -101,28 +100,11 @@ export async function GET(req: NextRequest) {
       contacts,
     };
 
-    // Generate ETag for the response data
-    const etag = generateETag(responseData);
-
-    // Check if the client already has this version (ETag match)
-    const ifNoneMatch = req.headers.get("if-none-match");
-    if (isETagMatch(etag, ifNoneMatch)) {
-      // Return 304 Not Modified if the content hasn't changed
-      return new NextResponse(null, {
-        status: 304,
-        headers: {
-          ETag: `"${etag}"`,
-          "Cache-Control": "public, max-age=0, must-revalidate",
-        },
-      });
-    }
-
     return new NextResponse(JSON.stringify(responseData), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
-        ETag: `"${etag}"`,
-        "Cache-Control": "public, max-age=0, must-revalidate",
+        "Cache-Control": "private, no-store",
       },
     });
   } catch (error) {

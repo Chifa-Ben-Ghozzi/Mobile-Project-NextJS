@@ -16,7 +16,7 @@ export async function GET(request: Request) {
   const { data, error } = await query;
   if (error) {
     console.error("Failed to fetch admin reclamations:", error);
-    return NextResponse.json({ error: "Failed to load reclamations" }, { status: 500 });
+    return NextResponse.json({ error: "Couldn't load support requests." }, { status: 500 });
   }
 
   return NextResponse.json({ reclamations: data });

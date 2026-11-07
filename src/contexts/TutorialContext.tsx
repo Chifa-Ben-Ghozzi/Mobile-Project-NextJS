@@ -116,18 +116,9 @@ const tutorialSteps: TutorialStep[] = [
     target: "[data-tutorial='activity-stats']",
   },
   {
-    key: "associated-people",
-    page: "/profile",
-    step: 10,
-    title: "Associated People",
-    content:
-      "Manage people associated with your account. Add family members or friends you frequently arrange rides for.",
-    target: "[data-tutorial='associated-people']",
-  },
-  {
     key: "security-settings",
     page: "/profile",
-    step: 11,
+    step: 10,
     title: "Security Settings",
     content:
       "Access the Security tab to change your password and manage notification preferences to keep your account secure.",
@@ -136,7 +127,7 @@ const tutorialSteps: TutorialStep[] = [
   {
     key: "contact-management",
     page: "/profile",
-    step: 12,
+    step: 11,
     title: "Contact Management",
     content:
       "View and manage your contacts in the Contacts tab. Add new contacts and manage existing ones to build your trusted network.",
@@ -145,7 +136,7 @@ const tutorialSteps: TutorialStep[] = [
   {
     key: "app-settings",
     page: "/profile",
-    step: 13,
+    step: 12,
     title: "App Settings",
     content:
       "Customize your app experience in the Settings tab. Choose your preferred theme and check your connection status.",
@@ -154,7 +145,7 @@ const tutorialSteps: TutorialStep[] = [
   {
     key: "create-ride-page",
     page: "/create-ride",
-    step: 14,
+    step: 13,
     title: "Creating a New Ride",
     content:
       "This is where you can create a new ride. Fill in all the necessary details like pickup and drop-off locations, date, time, and any special notes.",
@@ -163,7 +154,7 @@ const tutorialSteps: TutorialStep[] = [
   {
     key: "finish",
     page: "/dashboard",
-    step: 15,
+    step: 14,
     title: "Congratulations!",
     content:
       "You've completed the RideShare tutorial! You're now ready to start sharing rides. Remember, you can always access help and FAQs from the menu if you need more information. Enjoy using RideShare!",
@@ -454,7 +445,6 @@ export const TutorialProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       "profile-overview": "profile",
       "personal-info": "profile",
       "activity-stats": "profile",
-      "associated-people": "profile",
       "security-settings": "security",
       "contact-management": "contacts",
       "app-settings": "settings",

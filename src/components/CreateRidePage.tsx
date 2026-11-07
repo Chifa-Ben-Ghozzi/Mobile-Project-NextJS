@@ -45,13 +45,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
 
-import type { RideData, AssociatedPerson, User } from "../types";
-import { createRide, fetchCreateRideData } from "../utils/api";
+import type { RideData, User } from "../types";
+import { createRide } from "../utils/api";
 
 const LocationSearch = dynamic(() => import("./LocationSearch"), {
   ssr: false,
@@ -101,9 +100,6 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
     rider_name: currentUser?.name || "",
     rider_phone: currentUser?.phone || null,
   });
-  const [associatedPeople, setAssociatedPeople] = useState<AssociatedPerson[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
   const [riderType, setRiderType] = useState("self");
   const [isFromMapOpen, setIsFromMapOpen] = useState(false);
   const [isToMapOpen, setIsToMapOpen] = useState(false);
@@ -128,27 +124,6 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
       return () => clearTimeout(timer);
     }
   }, [isReusingRide]);
-
-  // Fetch associated people data
-  useEffect(() => {
-    const fetchData = async () => {
-      if (currentUser) {
-        try {
-          setIsLoading(true);
-          const data = await fetchCreateRideData();
-          setAssociatedPeople(data.associatedPeople);
-        } catch {
-          toast.error("Failed to fetch user data. Please try again.");
-        } finally {
-          setIsLoading(false);
-        }
-      } else {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [currentUser]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -311,21 +286,6 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
   };
 
   const renderStepContent = () => {
-    if (isLoading && currentStep === 3) {
-      return (
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-20" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-10 w-full" />
-          </div>
-        </div>
-      );
-    }
-
     switch (currentStep) {
       case 0:
         return (
@@ -538,11 +498,6 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="self">Myself</SelectItem>
-                  {associatedPeople.map((person) => (
-                    <SelectItem key={person.id} value={`associated_${person.id}`}>
-                      {person.name}
-                    </SelectItem>
-                  ))}
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
@@ -677,7 +632,7 @@ export default function CreateRidePage({ currentUser }: CreateRidePageProps) {
             <Button
               type="submit"
               onClick={handleSubmit}
-              disabled={isSubmitting || !isOnline || isLoading}
+              disabled={isSubmitting || !isOnline}
               className="bg-primary hover:bg-primary/90"
             >
               {isSubmitting ? (

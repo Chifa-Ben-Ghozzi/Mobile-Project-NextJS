@@ -56,11 +56,11 @@ export default function ReclamationsClient() {
       const response = await fetch("/api/reclamations");
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || "Failed to load reclamations");
+        throw new Error(data.error || "Couldn't load your support requests.");
       }
       setReclamations(data.reclamations);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to load reclamations");
+      toast.error(error instanceof Error ? error.message : "Couldn't load your support requests.");
     } finally {
       setIsLoading(false);
     }
@@ -97,14 +97,14 @@ export default function ReclamationsClient() {
       );
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || "Failed to save reclamation");
+        throw new Error(data.error || "Couldn't save your support request.");
       }
 
-      toast.success(editingId ? "Reclamation updated" : "Reclamation submitted");
+      toast.success(editingId ? "Support request updated" : "Support request sent");
       resetForm();
       await loadReclamations();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to save reclamation");
+      toast.error(error instanceof Error ? error.message : "Couldn't save your support request.");
     } finally {
       setIsSaving(false);
     }
@@ -121,18 +121,18 @@ export default function ReclamationsClient() {
 
   const deleteReclamation = async (id: string) => {
     // eslint-disable-next-line no-alert
-    if (!window.confirm("Delete this pending reclamation?")) return;
+    if (!window.confirm("Delete this pending support request?")) return;
     try {
       const response = await fetch(`/api/reclamations/${id}`, { method: "DELETE" });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || "Failed to delete reclamation");
+        throw new Error(data.error || "Couldn't delete your support request.");
       }
       setReclamations((items) => items.filter((item) => item.id !== id));
       if (editingId === id) resetForm();
-      toast.success("Reclamation deleted");
+      toast.success("Support request deleted");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to delete reclamation");
+      toast.error(error instanceof Error ? error.message : "Couldn't delete your support request.");
     }
   };
 
@@ -140,15 +140,15 @@ export default function ReclamationsClient() {
     <Layout>
       <div className="mx-auto w-full max-w-4xl space-y-8">
         <section>
-          <h1 className="text-3xl font-bold">Make a Reclamation</h1>
+          <h1 className="text-3xl font-bold">Need a hand? We’re here to help.</h1>
           <p className="mt-2 text-muted-foreground">
-            Tell us what happened. You can edit or delete your submission while it is pending.
+            Tell us what happened, and our team will help get things back on track.
           </p>
         </section>
 
         <Card>
           <CardHeader>
-            <CardTitle>{editingId ? "Edit reclamation" : "Submit a reclamation"}</CardTitle>
+            <CardTitle>{editingId ? "Update your support request" : "Send us a message"}</CardTitle>
             <CardDescription>
               Choose the issue type and describe what happened. Do not include passwords or payment
               card details.
@@ -231,7 +231,7 @@ export default function ReclamationsClient() {
 
               <div className="flex flex-wrap gap-2">
                 <Button disabled={isSaving} type="submit">
-                  {isSaving ? "Saving..." : editingId ? "Save changes" : "Submit reclamation"}
+                  {isSaving ? "Sending..." : editingId ? "Save changes" : "Send request"}
                 </Button>
                 {editingId && (
                   <Button onClick={resetForm} type="button" variant="outline">
@@ -244,13 +244,13 @@ export default function ReclamationsClient() {
         </Card>
 
         <section className="space-y-4">
-          <h2 className="text-2xl font-semibold">My submissions</h2>
+          <h2 className="text-2xl font-semibold">Your support requests</h2>
           {isLoading ? (
-            <p className="text-muted-foreground">Loading reclamations...</p>
+            <p className="text-muted-foreground">Loading your support requests...</p>
           ) : reclamations.length === 0 ? (
             <Card>
               <CardContent className="py-8 text-center text-muted-foreground">
-                You have not submitted any reclamations.
+                No support requests yet. If you need anything, we’re just a message away.
               </CardContent>
             </Card>
           ) : (

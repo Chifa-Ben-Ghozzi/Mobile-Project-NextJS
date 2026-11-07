@@ -83,7 +83,7 @@ const MapDialog: React.FC<MapDialogProps> = ({
     if (markerRef.current) {
       markerRef.current.setLngLat([lon, lat]);
     } else {
-      const newMarker = new Marker({ color: "#0ea5e9" })
+      const newMarker = new Marker({ color: "#dc2626" })
         .setLngLat([lon, lat])
         .addTo(mapInstanceRef.current);
       markerRef.current = newMarker;
@@ -156,7 +156,7 @@ const MapDialog: React.FC<MapDialogProps> = ({
           // Handle map load completion
           map.once("load", () => {
             map.resize();
-            const marker = new Marker({ color: "#0ea5e9" }).setLngLat([lon, lat]).addTo(map);
+            const marker = new Marker({ color: "#dc2626" }).setLngLat([lon, lat]).addTo(map);
             markerRef.current = marker;
             setIsLoading(false);
           });

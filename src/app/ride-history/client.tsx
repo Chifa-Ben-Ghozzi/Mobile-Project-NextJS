@@ -75,7 +75,7 @@ const StatusBadge = ({ status }: { status: string }) => {
       );
     case "accepted":
       return (
-        <Badge variant="default" className="bg-green-500 px-2 py-1 font-medium">
+        <Badge variant="default" className="bg-zinc-600 px-2 py-1 font-medium">
           Accepted
         </Badge>
       );
@@ -272,7 +272,7 @@ export default function RideHistoryClient() {
               ride.status === "completed"
                 ? "border-l-blue-500"
                 : ride.status === "accepted"
-                  ? "border-l-green-500"
+                  ? "border-l-zinc-500"
                   : ride.status === "cancelled"
                     ? "border-l-destructive"
                     : ride.status === "pending"
@@ -533,7 +533,7 @@ export default function RideHistoryClient() {
               statusFilter === "completed"
                 ? "bg-blue-500"
                 : statusFilter === "accepted"
-                  ? "bg-green-500"
+                  ? "bg-zinc-600"
                   : statusFilter === "cancelled"
                     ? "bg-destructive"
                     : "bg-border"

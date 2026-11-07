@@ -35,11 +35,11 @@ export async function PUT(request: Request, { params }: RouteContext) {
   );
   if (lookupError) {
     console.error("Failed to check reclamation ownership:", lookupError);
-    return NextResponse.json({ error: "Could not update reclamation" }, { status: 500 });
+    return NextResponse.json({ error: "Couldn't update your support request." }, { status: 500 });
   }
   if (!existing) {
     return NextResponse.json(
-      { error: "Reclamation not found or it is no longer editable" },
+      { error: "Support request not found or no longer editable." },
       { status: 404 }
     );
   }
@@ -75,11 +75,11 @@ export async function PUT(request: Request, { params }: RouteContext) {
 
   if (error) {
     console.error("Failed to update reclamation:", error);
-    return NextResponse.json({ error: "Failed to update reclamation" }, { status: 500 });
+    return NextResponse.json({ error: "Couldn't update your support request." }, { status: 500 });
   }
   if (!data) {
     return NextResponse.json(
-      { error: "Reclamation not found or it is no longer editable" },
+      { error: "Support request not found or no longer editable." },
       { status: 409 }
     );
   }
@@ -105,11 +105,11 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
 
   if (error) {
     console.error("Failed to delete reclamation:", error);
-    return NextResponse.json({ error: "Failed to delete reclamation" }, { status: 500 });
+    return NextResponse.json({ error: "Couldn't delete your support request." }, { status: 500 });
   }
   if (!data) {
     return NextResponse.json(
-      { error: "Reclamation not found or it is no longer deletable" },
+      { error: "Support request not found or no longer deletable." },
       { status: 404 }
     );
   }

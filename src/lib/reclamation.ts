@@ -31,7 +31,7 @@ export function validateReclamationInput(input: unknown):
   | { valid: true; value: ReclamationInput }
   | { valid: false; error: string } {
   if (typeof input !== "object" || input === null) {
-    return { valid: false, error: "Invalid reclamation data" };
+    return { valid: false, error: "Invalid support request details." };
   }
 
   const data = input as Record<string, unknown>;
@@ -41,7 +41,7 @@ export function validateReclamationInput(input: unknown):
   const rideId = data.ride_id;
 
   if (typeof category !== "string" || !isReclamationCategory(category)) {
-    return { valid: false, error: "Select a valid reclamation category" };
+    return { valid: false, error: "Choose a valid support category." };
   }
   if (subject.length < 5 || subject.length > 120) {
     return { valid: false, error: "Subject must be between 5 and 120 characters" };

@@ -386,7 +386,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
             </TabsTrigger>
             <TabsTrigger value="reclamations" className="flex flex-1 items-center gap-2">
               <MessageSquareText className="h-4 w-4" />
-              <span className="hidden sm:inline">Reclamations</span>
+              <span className="hidden sm:inline">Support Requests</span>
             </TabsTrigger>
             <TabsTrigger value="bugs" className="flex flex-1 items-center gap-2">
               <XCircle className="h-4 w-4" />

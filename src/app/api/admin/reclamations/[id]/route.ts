@@ -37,10 +37,10 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
   if (error) {
     console.error("Failed to update admin reclamation:", error);
-    return NextResponse.json({ error: "Failed to update reclamation" }, { status: 500 });
+    return NextResponse.json({ error: "Couldn't update the support request." }, { status: 500 });
   }
   if (!data) {
-    return NextResponse.json({ error: "Reclamation not found" }, { status: 404 });
+    return NextResponse.json({ error: "Support request not found." }, { status: 404 });
   }
 
   return NextResponse.json({ reclamation: data });
@@ -57,10 +57,10 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
 
   if (error) {
     console.error("Failed to delete admin reclamation:", error);
-    return NextResponse.json({ error: "Failed to delete reclamation" }, { status: 500 });
+    return NextResponse.json({ error: "Couldn't delete the support request." }, { status: 500 });
   }
   if (!data) {
-    return NextResponse.json({ error: "Reclamation not found" }, { status: 404 });
+    return NextResponse.json({ error: "Support request not found." }, { status: 404 });
   }
 
   return NextResponse.json({ success: true });

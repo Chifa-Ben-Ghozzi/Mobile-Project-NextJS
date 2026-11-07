@@ -127,7 +127,7 @@ export default function BugReportForm() {
 
         {isSuccess ? (
           <CardContent className="pt-4 pb-8 text-center space-y-6">
-            <div className="mx-auto bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400 rounded-full p-4 w-16 h-16 flex items-center justify-center">
+            <div className="mx-auto bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 rounded-full p-4 w-16 h-16 flex items-center justify-center">
               <CheckCircle className="h-8 w-8" />
             </div>
             <div className="space-y-2">
@@ -191,7 +191,7 @@ export default function BugReportForm() {
                   </SelectTrigger>
                   <SelectContent className="max-w-[70vw] mx-auto overflow-hidden text-ellipsis whitespace-nowrap">
                     <SelectItem value="low" className="flex items-center">
-                      <span className="w-2 h-2 rounded-full bg-green-500 mr-2" />
+                      <span className="w-2 h-2 rounded-full bg-zinc-500 mr-2" />
                       <span className="truncate">
                         Low - Minor issue, doesn&apos;t affect functionality
                       </span>
