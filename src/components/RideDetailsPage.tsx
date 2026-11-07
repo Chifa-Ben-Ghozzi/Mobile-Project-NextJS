@@ -572,7 +572,7 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
 
   const openInGoogleMaps = (lat: number, lon: number) => {
     if (typeof window !== "undefined") {
-      window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`, "_blank");
+      window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}&region=TN`, "_blank");
     }
   };
 

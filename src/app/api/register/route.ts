@@ -40,18 +40,17 @@ export async function POST(request: Request) {
 
     let phoneNumber;
     try {
-      // Include the country code, for example +216 for Tunisia.
       phoneNumber = parsePhoneNumber(phone.trim());
 
-      if (!phoneNumber || !phoneNumber.isValid()) {
+      if (!phoneNumber || !phoneNumber.isValid() || phoneNumber.country !== "TN") {
         return NextResponse.json(
-          { error: "Invalid phone number. Include your country code." },
+          { error: "Enter a valid Tunisian phone number (+216)." },
           { status: 400 }
         );
       }
     } catch {
       return NextResponse.json(
-        { error: "Invalid phone number. Include your country code." },
+        { error: "Enter a valid Tunisian phone number (+216)." },
         { status: 400 }
       );
     }

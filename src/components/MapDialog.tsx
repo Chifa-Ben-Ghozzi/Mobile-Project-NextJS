@@ -24,6 +24,17 @@ interface SearchResult {
   center: [number, number];
 }
 
+const TUNISIA_BOUNDS: [[number, number], [number, number]] = [
+  [7.5, 30.2],
+  [11.6, 37.6],
+];
+const TUNISIA_CENTER = { lat: 36.8065, lon: 10.1815 };
+const isWithinTunisiaBounds = (lat: number, lon: number) =>
+  lon >= TUNISIA_BOUNDS[0][0] &&
+  lon <= TUNISIA_BOUNDS[1][0] &&
+  lat >= TUNISIA_BOUNDS[0][1] &&
+  lat <= TUNISIA_BOUNDS[1][1];
+
 interface MapDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -39,7 +50,7 @@ const MapDialog: React.FC<MapDialogProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [selectedLocation, setSelectedLocation] = useState({ lat: 38.70749, lon: -9.136398 });
+  const [selectedLocation, setSelectedLocation] = useState(TUNISIA_CENTER);
   const [address, setAddress] = useState("");
   const mapRef = useRef<HTMLDivElement | null>(null);
   const mapInstanceRef = useRef<maplibregl.Map | null>(null);
@@ -51,6 +62,11 @@ const MapDialog: React.FC<MapDialogProps> = ({
 
   const handleMapClick = useCallback((e: maplibregl.MapMouseEvent) => {
     const { lng, lat } = e.lngLat;
+    if (!isWithinTunisiaBounds(lat, lng)) {
+      toast.error("Choose a location within Tunisia.");
+      return;
+    }
+
     setSelectedLocation({ lat, lon: lng });
 
     // Only update marker position, don't reinitialize map
@@ -65,7 +81,7 @@ const MapDialog: React.FC<MapDialogProps> = ({
   const reverseGeocode = async (lat: number, lon: number) => {
     try {
       const response = await fetch(
-        `https://api.maptiler.com/geocoding/${lon},${lat}.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`
+        `https://api.maptiler.com/geocoding/${lon},${lat}.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}&country=tn&bbox=${TUNISIA_BOUNDS[0][0]},${TUNISIA_BOUNDS[0][1]},${TUNISIA_BOUNDS[1][0]},${TUNISIA_BOUNDS[1][1]}`
       );
       const data = await response.json();
       if (data?.features?.[0]?.place_name) {
@@ -133,9 +149,11 @@ const MapDialog: React.FC<MapDialogProps> = ({
         try {
           const map = new Map({
             container: mapRef.current,
-            style: `https://api.maptiler.com/maps/streets/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`,
+            style: `https://api.maptiler.com/maps/streets-v2/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}&language=fr`,
             center: [lon, lat],
-            zoom: 13,
+            zoom: 14,
+            maxZoom: 19,
+            maxBounds: TUNISIA_BOUNDS,
           });
 
           // Add navigation controls
@@ -210,8 +228,11 @@ const MapDialog: React.FC<MapDialogProps> = ({
     const initMap = () => {
       // Priority 1: Use initial location from props
       if (initialLocation) {
-        setSelectedLocation({ lat: initialLocation.lat, lon: initialLocation.lon });
-        initializeMapWithCoordinates(initialLocation.lat, initialLocation.lon);
+        const location = isWithinTunisiaBounds(initialLocation.lat, initialLocation.lon)
+          ? initialLocation
+          : TUNISIA_CENTER;
+        setSelectedLocation(location);
+        initializeMapWithCoordinates(location.lat, location.lon);
         return;
       }
 
@@ -220,8 +241,11 @@ const MapDialog: React.FC<MapDialogProps> = ({
         navigator.geolocation.getCurrentPosition(
           (position) => {
             const { latitude, longitude } = position.coords;
-            setSelectedLocation({ lat: latitude, lon: longitude });
-            initializeMapWithCoordinates(latitude, longitude);
+            const location = isWithinTunisiaBounds(latitude, longitude)
+              ? { lat: latitude, lon: longitude }
+              : TUNISIA_CENTER;
+            setSelectedLocation(location);
+            initializeMapWithCoordinates(location.lat, location.lon);
           },
           () => {
             // Priority 3: Use default coordinates as fallback
@@ -316,15 +340,15 @@ const MapDialog: React.FC<MapDialogProps> = ({
   useEffect(() => {
     if (!initialLocation || !mapInstanceRef.current || !isOpen) return;
 
-    // Update selected location
-    setSelectedLocation({ lat: initialLocation.lat, lon: initialLocation.lon });
+    const location = isWithinTunisiaBounds(initialLocation.lat, initialLocation.lon)
+      ? initialLocation
+      : TUNISIA_CENTER;
+    setSelectedLocation(location);
 
-    // Update map center and marker
-    mapInstanceRef.current.setCenter([initialLocation.lon, initialLocation.lat]);
-    updateMarker(initialLocation.lat, initialLocation.lon);
+    mapInstanceRef.current.setCenter([location.lon, location.lat]);
+    updateMarker(location.lat, location.lon);
 
-    // Update address
-    reverseGeocode(initialLocation.lat, initialLocation.lon);
+    reverseGeocode(location.lat, location.lon);
   }, [initialLocation, isOpen, updateMarker]);
 
   // Handle search
@@ -334,22 +358,38 @@ const MapDialog: React.FC<MapDialogProps> = ({
 
     try {
       const response = await fetch(
-        `https://api.maptiler.com/geocoding/${encodeURIComponent(searchQuery)}.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`
+        `https://api.maptiler.com/geocoding/${encodeURIComponent(searchQuery)}.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}&country=tn&bbox=${TUNISIA_BOUNDS[0][0]},${TUNISIA_BOUNDS[0][1]},${TUNISIA_BOUNDS[1][0]},${TUNISIA_BOUNDS[1][1]}&proximity=${selectedLocation.lon},${selectedLocation.lat}&language=fr&limit=8`
       );
       const data = await response.json();
-      setSearchResults(data.features || []);
+      setSearchResults(
+        (data.features || []).filter((result: SearchResult) =>
+          isWithinTunisiaBounds(result.center[1], result.center[0])
+        )
+      );
     } catch {
       toast.error("Error searching for location");
     }
-  }, [searchQuery]);
+  }, [searchQuery, selectedLocation]);
 
   // Handle search result selection
   const handleSelectSearchResult = (result: SearchResult) => {
     const [lon, lat] = result.center;
+    if (!isWithinTunisiaBounds(lat, lon)) {
+      toast.error("Choose a location within Tunisia.");
+      return;
+    }
+
     setSelectedLocation({ lat, lon });
     setAddress(result.place_name);
     setSearchResults([]);
-    updateMarker(lat, lon, true);
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.flyTo({
+        center: [lon, lat],
+        zoom: 16,
+        essential: true,
+      });
+      updateMarker(lat, lon);
+    }
   };
 
   // Handle current location button
@@ -362,8 +402,20 @@ const MapDialog: React.FC<MapDialogProps> = ({
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
         const { latitude, longitude } = coords;
+        if (!isWithinTunisiaBounds(latitude, longitude)) {
+          toast.error("Your current location is outside Tunisia.");
+          return;
+        }
+
         setSelectedLocation({ lat: latitude, lon: longitude });
-        updateMarker(latitude, longitude, true);
+        if (mapInstanceRef.current) {
+          mapInstanceRef.current.flyTo({
+            center: [longitude, latitude],
+            zoom: 16,
+            essential: true,
+          });
+          updateMarker(latitude, longitude);
+        }
         reverseGeocode(latitude, longitude);
       },
       () => {
@@ -396,7 +448,7 @@ const MapDialog: React.FC<MapDialogProps> = ({
   };
 
   const openInGoogleMaps = (lat: number, lon: number) => {
-    window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`, "_blank");
+    window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}&region=TN`, "_blank");
   };
 
   const renderContent = () => (
