@@ -81,11 +81,7 @@ export default function AboutClient() {
               community and sustainable transportation. Our diverse team brings together expertise
               in technology, urban planning, and community building.
             </p>
-            <p>
-              Led by our CEO, Félix Robb, we&apos;re committed to creating a platform that not only
-              simplifies travel but also strengthens social connections and contributes to a greener
-              future.
-            </p>
+
           </section>
           <section>
             <h2 className="text-2xl font-semibold mb-3">Technology & Security</h2>

@@ -39,15 +39,8 @@ export async function GET(req: NextRequest) {
 
     if (contactsError) throw contactsError;
 
-    const { data: associatedPeople, error: associatedPeopleError } = await database
-      .collection("associated_people")
-      .select("*")
-      .eq("user_id", userId);
-
-    if (associatedPeopleError) throw associatedPeopleError;
-
     // Generate response data
-    const responseData = { user: userData, contacts, associatedPeople };
+    const responseData = { user: userData, contacts };
 
     // Generate ETag for the response data
     const etag = generateETag(responseData);

@@ -306,14 +306,14 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
                 color: #666;
               }
               .from-popup .maplibregl-popup-content {
-                background-color: #ecfdf5;
-                border-left: 4px solid #10b981;
-                color: #065f46;
+                background-color: #fef2f2;
+                border-left: 4px solid #dc2626;
+                color: #991b1b;
               }
               .to-popup .maplibregl-popup-content {
-                background-color: #eff6ff;
-                border-left: 4px solid #3b82f6;
-                color: #1e40af;
+                background-color: #f4f4f5;
+                border-left: 4px solid #71717a;
+                color: #27272a;
               }
               .location-label {
                 padding: 4px 8px;
@@ -329,10 +329,10 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
                 margin-top: -5px;
               }
               .from-label {
-                background-color: #10b981;
+                background-color: #dc2626;
               }
               .to-label {
-                background-color: #3b82f6;
+                background-color: #52525b;
               }
             `;
               document.head.appendChild(customStyles);
@@ -421,7 +421,7 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
 
       // Create marker
       const marker = new Marker({
-        color: type === "from" ? "#10b981" : "#3b82f6",
+        color: type === "from" ? "#dc2626" : "#52525b",
         scale: 1,
       })
         .setLngLat(lngLat)
@@ -572,7 +572,7 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
 
   const openInGoogleMaps = (lat: number, lon: number) => {
     if (typeof window !== "undefined") {
-      window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`, "_blank");
+      window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}&region=TN`, "_blank");
     }
   };
 
@@ -582,7 +582,7 @@ export default function RideDetailsPage({ currentUser, rideId }: RideDetailsPage
         return <Badge variant="secondary">Pending</Badge>;
       case "accepted":
         return (
-          <Badge variant="default" className="bg-green-500">
+          <Badge variant="default" className="bg-zinc-600">
             Accepted
           </Badge>
         );

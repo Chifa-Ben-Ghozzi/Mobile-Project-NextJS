@@ -67,7 +67,6 @@ const indexedCollections = [
   "vehicles",
   "vehicle_maintenance",
   "driver_offers",
-  "associated_people",
   "bug_reports",
   "contacts",
   "email_verification_tokens",
@@ -95,7 +94,6 @@ async function createIndexes(db: Db) {
     db.collection("vehicles").createIndex({ user_id: 1 }),
     db.collection("driver_offers").createIndex({ status: 1, departure_time: 1 }),
     db.collection("driver_offers").createIndex({ driver_id: 1 }),
-    db.collection("associated_people").createIndex({ user_id: 1 }),
     db.collection("bug_reports").createIndex({ status: 1 }),
     db.collection("bug_reports").createIndex({ user_id: 1 }),
     db.collection("contacts").createIndex(

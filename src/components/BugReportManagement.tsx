@@ -219,7 +219,7 @@ export default function BugReportManagement() {
         return (
           <Badge
             variant="outline"
-            className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+            className="bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-300"
           >
             <CheckCircle className="h-3 w-3 mr-1" />
             Resolved
@@ -247,7 +247,7 @@ export default function BugReportManagement() {
         return (
           <Badge
             variant="outline"
-            className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+            className="bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-300"
           >
             Low
           </Badge>
@@ -631,7 +631,7 @@ export default function BugReportManagement() {
                     </SelectItem>
                     <SelectItem value="resolved">
                       <div className="flex items-center">
-                        <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+                        <CheckCircle className="h-4 w-4 mr-2 text-zinc-500" />
                         Resolved
                       </div>
                     </SelectItem>

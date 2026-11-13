@@ -104,9 +104,9 @@ const getNotificationColor = (type: string) => {
     case "newNote":
       return "bg-blue-50/60 dark:bg-blue-950/20 border-blue-200/70 dark:border-blue-800/40";
     case "contactRequest":
-      return "bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-200/70 dark:border-emerald-800/40";
+      return "bg-zinc-50/60 dark:bg-zinc-950/20 border-zinc-200/70 dark:border-zinc-800/40";
     case "contactAccepted":
-      return "bg-green-50/60 dark:bg-green-950/20 border-green-200/70 dark:border-green-800/40";
+      return "bg-zinc-50/60 dark:bg-zinc-950/20 border-zinc-200/70 dark:border-zinc-800/40";
     case "newRide":
       return "bg-amber-50/60 dark:bg-amber-950/20 border-amber-200/70 dark:border-amber-800/40";
     case "rideAccepted":
@@ -128,9 +128,9 @@ const getNotificationIcon = (type: string) => {
     case "newNote":
       return <MessageSquare className="h-5 w-5 text-blue-500" />;
     case "contactRequest":
-      return <UserPlus className="h-5 w-5 text-emerald-500" />;
+      return <UserPlus className="h-5 w-5 text-zinc-500" />;
     case "contactAccepted":
-      return <CheckCheck className="h-5 w-5 text-green-500" />;
+      return <CheckCheck className="h-5 w-5 text-zinc-500" />;
     case "newRide":
       return <Car className="h-5 w-5 text-amber-500" />;
     case "rideAccepted":
@@ -517,9 +517,9 @@ const NotificationList = ({
                   case "newNote":
                     return "bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 dark:text-blue-300 dark:border-blue-800/30";
                   case "contactRequest":
-                    return "bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/40 dark:hover:bg-emerald-900/60 dark:text-emerald-300 dark:border-emerald-800/30";
+                    return "bg-zinc-50 hover:bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-900/40 dark:hover:bg-zinc-900/60 dark:text-zinc-300 dark:border-zinc-800/30";
                   case "contactAccepted":
-                    return "bg-green-50 hover:bg-green-100 text-green-700 border-green-200 dark:bg-green-900/40 dark:hover:bg-green-900/60 dark:text-green-300 dark:border-green-800/30";
+                    return "bg-zinc-50 hover:bg-zinc-100 text-zinc-700 border-zinc-200 dark:bg-zinc-900/40 dark:hover:bg-zinc-900/60 dark:text-zinc-300 dark:border-zinc-800/30";
                   case "newRide":
                     return "bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/40 dark:hover:bg-amber-900/60 dark:text-amber-300 dark:border-amber-800/30";
                   case "rideAccepted":

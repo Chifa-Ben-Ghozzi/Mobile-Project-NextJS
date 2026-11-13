@@ -11,7 +11,6 @@ import {
   Settings,
   Shield,
   Bell,
-  UserPlus,
   LogOut,
   UserX,
   Smartphone,
@@ -69,14 +68,11 @@ import "react-phone-number-input/style.css";
 import type {
   User,
   Contact,
-  AssociatedPerson,
   PushSubscription as AppPushSubscription,
 } from "../types";
 import {
   updateProfile,
   changePassword,
-  addAssociatedPerson,
-  deleteAssociatedPerson,
   deleteUser,
   fetchUserStats,
   fetchProfileData,
@@ -93,11 +89,9 @@ interface ProfilePageProps {
 export default function ProfilePage({ currentUser }: ProfilePageProps) {
   const [user, setUser] = useState<User>(currentUser);
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [associatedPeople, setAssociatedPeople] = useState<AssociatedPerson[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const [newAssociatedPerson, setNewAssociatedPerson] = useState({ name: "", relationship: "" });
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [editedUser, setEditedUser] = useState<User | null>(currentUser);
@@ -137,9 +131,6 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
 
   const [newPasswordStrength, setNewPasswordStrength] = useState<string>("");
 
-  const [isAddingAssociatedPerson, setIsAddingAssociatedPerson] = useState(false);
-  const [isDeletingAssociatedPerson, setIsDeletingAssociatedPerson] = useState<string | null>(null);
-
   // Function to evaluate password strength
   const evaluatePasswordStrength = (password: string) => {
     const lengthCriteria = password.length >= 8;
@@ -165,7 +156,6 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
         const data = await fetchProfileData();
         setUser(data.user);
         setContacts(data.contacts);
-        setAssociatedPeople(data.associatedPeople);
         setEditedUser(data.user);
       } catch {
         if (!silent) {
@@ -461,37 +451,6 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
     }
   };
 
-  const handleAddAssociatedPerson = async () => {
-    if (newAssociatedPerson.name && newAssociatedPerson.relationship) {
-      const associatename = newAssociatedPerson.name.trim();
-      const associaterela = newAssociatedPerson.relationship.trim();
-      try {
-        setIsAddingAssociatedPerson(true);
-        await addAssociatedPerson(associatename, associaterela);
-        setNewAssociatedPerson({ name: "", relationship: "" });
-        await fetchData(true);
-        toast.success(`${associatename} added successfully!`);
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
-      } finally {
-        setIsAddingAssociatedPerson(false);
-      }
-    }
-  };
-
-  const handleDeleteAssociatedPerson = async (personId: string, personName: string) => {
-    try {
-      setIsDeletingAssociatedPerson(personId);
-      await deleteAssociatedPerson(personId, user.id);
-      await fetchData(true);
-      toast.success(`${personName} removed successfully.`);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "An unexpected error occurred");
-    } finally {
-      setIsDeletingAssociatedPerson(personId);
-    }
-  };
-
   const handleDeleteUser = async () => {
     setIsDeleteAccountDialogOpen(true);
   };
@@ -781,103 +740,6 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                   </CardContent>
                 </Card>
 
-                <Card data-tutorial="associated-people">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-xl flex items-center">
-                      <UserPlus className="h-5 w-5 mr-2 text-primary" /> Associated People
-                    </CardTitle>
-                    <CardDescription>People you&apos;ve added to your profile</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {isRefreshing && associatedPeople.length === 0 ? (
-                      <div className="space-y-3">
-                        <Skeleton className="h-16 w-full" />
-                        <Skeleton className="h-16 w-full" />
-                      </div>
-                    ) : associatedPeople.length > 0 ? (
-                      <div className="space-y-3">
-                        {associatedPeople.map((person) => (
-                          <div
-                            key={person.id}
-                            className="flex justify-between items-center px-4 py-3 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors"
-                          >
-                            <div className="flex items-center gap-3">
-                              <Avatar className="h-8 w-8">
-                                <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                                  {getInitials(person.name)}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="font-medium">{person.name}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {person.relationship}
-                                </p>
-                              </div>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-destructive"
-                              onClick={() => handleDeleteAssociatedPerson(person.id, person.name)}
-                              disabled={!isOnline || isDeletingAssociatedPerson === person.id}
-                            >
-                              {isDeletingAssociatedPerson === person.id ? (
-                                <Loader className="animate-spin h-4 w-4" />
-                              ) : (
-                                <UserX className="h-4 w-4" />
-                              )}
-                              <span className="sr-only">Delete</span>
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-6 text-muted-foreground">
-                        <p>No associated people added yet.</p>
-                      </div>
-                    )}
-                  </CardContent>
-                  <CardFooter className="flex flex-col gap-3">
-                    <div className="grid grid-cols-2 gap-2 w-full">
-                      <Input
-                        id="name-ass"
-                        placeholder="Name"
-                        value={newAssociatedPerson.name}
-                        onChange={(e) =>
-                          setNewAssociatedPerson((prev) => ({ ...prev, name: e.target.value }))
-                        }
-                      />
-                      <Input
-                        id="rela-ass"
-                        placeholder="Relationship"
-                        value={newAssociatedPerson.relationship}
-                        onChange={(e) =>
-                          setNewAssociatedPerson((prev) => ({
-                            ...prev,
-                            relationship: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-                    <Button
-                      onClick={handleAddAssociatedPerson}
-                      className="w-full"
-                      disabled={
-                        !isOnline ||
-                        !newAssociatedPerson.name ||
-                        !newAssociatedPerson.relationship ||
-                        isAddingAssociatedPerson
-                      }
-                    >
-                      {isAddingAssociatedPerson ? (
-                        <Loader className="animate-spin h-4 w-4 mr-2" />
-                      ) : (
-                        <UserPlus className="h-4 w-4 mr-2" />
-                      )}
-                      Add Person
-                    </Button>
-                  </CardFooter>
-                </Card>
               </>
             )}
           </TabsContent>
@@ -1415,7 +1277,7 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                       <div className="relative">
                         <div className="h-2 rounded bg-gray-200">
                           <div
-                            className={`h-full rounded ${newPasswordStrength === "Strong" ? "bg-green-500" : newPasswordStrength === "Medium" ? "bg-yellow-500" : "bg-red-500"}`}
+                            className={`h-full rounded ${newPasswordStrength === "Strong" ? "bg-zinc-600" : newPasswordStrength === "Medium" ? "bg-zinc-400" : "bg-red-500"}`}
                             style={{
                               width:
                                 newPasswordStrength === "Strong"
@@ -1429,7 +1291,7 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                           />
                         </div>
                         <p
-                          className={`text-sm mt-1 ${newPasswordStrength === "Strong" ? "text-green-500" : newPasswordStrength === "Medium" ? "text-yellow-500" : "text-red-500"}`}
+                          className={`text-sm mt-1 ${newPasswordStrength === "Strong" ? "text-zinc-600 dark:text-zinc-300" : newPasswordStrength === "Medium" ? "text-zinc-500" : "text-red-500"}`}
                         >
                           {newPasswordStrength}
                         </p>
@@ -1495,7 +1357,7 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                       <div className="relative">
                         <div className="h-2 rounded bg-gray-200">
                           <div
-                            className={`h-full rounded ${newPasswordStrength === "Strong" ? "bg-green-500" : newPasswordStrength === "Medium" ? "bg-yellow-500" : "bg-red-500"}`}
+                            className={`h-full rounded ${newPasswordStrength === "Strong" ? "bg-zinc-600" : newPasswordStrength === "Medium" ? "bg-zinc-400" : "bg-red-500"}`}
                             style={{
                               width:
                                 newPasswordStrength === "Strong"
@@ -1509,7 +1371,7 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                           />
                         </div>
                         <p
-                          className={`text-sm mt-1 ${newPasswordStrength === "Strong" ? "text-green-500" : newPasswordStrength === "Medium" ? "text-yellow-500" : "text-red-500"}`}
+                          className={`text-sm mt-1 ${newPasswordStrength === "Strong" ? "text-zinc-600 dark:text-zinc-300" : newPasswordStrength === "Medium" ? "text-zinc-500" : "text-red-500"}`}
                         >
                           {newPasswordStrength}
                         </p>
@@ -1560,7 +1422,7 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                   <ul className="text-sm list-disc list-inside mt-2 space-y-1">
                     <li>Your personal information</li>
                     <li>Ride history</li>
-                    <li>Contacts and associated people</li>
+                    <li>Contacts</li>
                     <li>Account settings</li>
                   </ul>
                 </div>
@@ -1603,7 +1465,7 @@ export default function ProfilePage({ currentUser }: ProfilePageProps) {
                 <ul className="text-sm list-disc list-inside mt-2 space-y-1">
                   <li>Your personal information</li>
                   <li>Ride history</li>
-                  <li>Contacts and associated people</li>
+                  <li>Contacts</li>
                   <li>Account settings</li>
                 </ul>
               </div>

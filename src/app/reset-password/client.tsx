@@ -152,7 +152,7 @@ function ResetPasswordForm() {
                     <div className="relative">
                       <div className="h-2 rounded bg-gray-200">
                         <div
-                          className={`h-full rounded ${newPasswordStrength === "Strong" ? "bg-green-500" : newPasswordStrength === "Medium" ? "bg-yellow-500" : "bg-red-500"}`}
+                          className={`h-full rounded ${newPasswordStrength === "Strong" ? "bg-zinc-600" : newPasswordStrength === "Medium" ? "bg-zinc-400" : "bg-red-500"}`}
                           style={{
                             width:
                               newPasswordStrength === "Strong"
@@ -166,7 +166,7 @@ function ResetPasswordForm() {
                         />
                       </div>
                       <p
-                        className={`text-sm mt-1 ${newPasswordStrength === "Strong" ? "text-green-500" : newPasswordStrength === "Medium" ? "text-yellow-500" : "text-red-500"}`}
+                        className={`text-sm mt-1 ${newPasswordStrength === "Strong" ? "text-zinc-600 dark:text-zinc-300" : newPasswordStrength === "Medium" ? "text-zinc-500" : "text-red-500"}`}
                       >
                         {newPasswordStrength}
                       </p>
@@ -190,11 +190,6 @@ function ResetPasswordForm() {
           </CardContent>
         </Card>
       </main>
-      <footer className="bg-background p-4 border-t">
-        <div className="container mx-auto text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} RideShare. All rights reserved.
-        </div>
-      </footer>
     </div>
   );
 }

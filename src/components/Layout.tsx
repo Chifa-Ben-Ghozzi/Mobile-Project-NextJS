@@ -113,7 +113,7 @@ export default function Layout({ children }: LayoutProps) {
                       { icon: Home, label: "Dashboard", href: "/dashboard" },
                       { icon: Car, label: "Request a Ride", href: "/create-ride" },
                       { icon: CarFront, label: "Offer a Ride", href: "/offer-ride" },
-                      { icon: MessageSquareText, label: "Reclamation", href: "/reclamations" },
+                      { icon: MessageSquareText, label: "Support", href: "/reclamations" },
                       { icon: MessagesSquare, label: "Forum", href: "/forum" },
                       { icon: Users, label: "Profile", href: "/profile" },
                     ].map((item) => (
@@ -154,7 +154,7 @@ export default function Layout({ children }: LayoutProps) {
                   { icon: Home, label: "Dashboard", href: "/dashboard" },
                   { icon: Car, label: "Request a Ride", href: "/create-ride" },
                   { icon: CarFront, label: "Offer a Ride", href: "/offer-ride" },
-                  { icon: MessageSquareText, label: "Reclamation", href: "/reclamations" },
+                  { icon: MessageSquareText, label: "Support", href: "/reclamations" },
                   { icon: Users, label: "Profile", href: "/profile" },
                 ].map((item) => (
                   <div key={item.label} className="flex-1">

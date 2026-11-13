@@ -180,11 +180,6 @@ export default function RegisterPage({ quote }: RegisterPageProps) {
           )}
         </div>
       </main>
-      <footer className="bg-background p-4 border-t">
-        <div className="container mx-auto text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} RideShare. All rights reserved.
-        </div>
-      </footer>
     </div>
   );
 }

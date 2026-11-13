@@ -53,11 +53,11 @@ export default function ReclamationManagement() {
       const response = await fetch(`/api/admin/reclamations?status=${statusFilter}`);
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || "Failed to load reclamations");
+        throw new Error(data.error || "Couldn't load support requests.");
       }
       setReclamations(data.reclamations);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to load reclamations");
+      toast.error(error instanceof Error ? error.message : "Couldn't load support requests.");
     } finally {
       setIsLoading(false);
     }
@@ -80,28 +80,28 @@ export default function ReclamationManagement() {
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || "Failed to update reclamation");
+        throw new Error(data.error || "Couldn't update the support request.");
       }
-      toast.success("Reclamation updated");
+      toast.success("Support request updated");
       await loadReclamations();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to update reclamation");
+      toast.error(error instanceof Error ? error.message : "Couldn't update the support request.");
     }
   };
 
   const deleteReclamation = async (id: string) => {
     // eslint-disable-next-line no-alert
-    if (!window.confirm("Permanently delete this reclamation?")) return;
+    if (!window.confirm("Permanently delete this support request?")) return;
     try {
       const response = await fetch(`/api/admin/reclamations/${id}`, { method: "DELETE" });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || "Failed to delete reclamation");
+        throw new Error(data.error || "Couldn't delete the support request.");
       }
       setReclamations((items) => items.filter((item) => item.id !== id));
-      toast.success("Reclamation deleted");
+      toast.success("Support request deleted");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to delete reclamation");
+      toast.error(error instanceof Error ? error.message : "Couldn't delete the support request.");
     }
   };
 
@@ -109,10 +109,10 @@ export default function ReclamationManagement() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          Review users’ complaints, send a response, and update their status.
+          Help users get back on track: review requests, send a reply, and update their status.
         </p>
         <Select onValueChange={setStatusFilter} value={statusFilter}>
-          <SelectTrigger className="w-44" aria-label="Filter reclamations by status">
+          <SelectTrigger className="w-44" aria-label="Filter support requests by status">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -127,11 +127,11 @@ export default function ReclamationManagement() {
       </div>
 
       {isLoading ? (
-        <p className="text-muted-foreground">Loading reclamations...</p>
+        <p className="text-muted-foreground">Loading support requests...</p>
       ) : reclamations.length === 0 ? (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
-            No reclamations match this filter.
+            No support requests match this filter.
           </CardContent>
         </Card>
       ) : (
@@ -201,7 +201,7 @@ function AdminReclamationCard({
             }}
             value={status}
           >
-            <SelectTrigger aria-label="Reclamation status">
+            <SelectTrigger aria-label="Support request status">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

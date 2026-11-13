@@ -164,13 +164,6 @@ export type RideData = {
   gender_preference: "any" | "female" | "male";
 };
 
-export type AssociatedPerson = {
-  id: string;
-  user_id: string;
-  name: string;
-  relationship: string;
-};
-
 export type UserStats = {
   rides_offered: number;
   rides_accepted: number;

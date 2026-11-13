@@ -57,7 +57,7 @@ function VerificationHandler() {
 
   const statusIcon = {
     verifying: <Loader2 className="h-12 w-12 animate-spin text-primary" />,
-    success: <CheckCircle className="h-12 w-12 text-green-500" />,
+    success: <CheckCircle className="h-12 w-12 text-zinc-500" />,
     error: <XCircle className="h-12 w-12 text-red-500" />,
   };
 
@@ -129,11 +129,6 @@ export default function VerifyEmailClient() {
         </Suspense>
       </main>
 
-      <footer className="bg-background p-4 border-t">
-        <div className="container mx-auto text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} RideShare. All rights reserved.
-        </div>
-      </footer>
     </div>
   );
 }

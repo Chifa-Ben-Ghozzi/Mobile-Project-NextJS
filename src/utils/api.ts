@@ -2,7 +2,6 @@ import type {
   User,
   RideData,
   Contact,
-  AssociatedPerson,
   Note,
   BugReportFormData,
   Vehicle,
@@ -326,33 +325,6 @@ export const changePassword = async (
   }
 };
 
-export const addAssociatedPerson = async (
-  name: string,
-  relationship: string
-): Promise<AssociatedPerson> => {
-  const response = await fetch("/api/associated-people", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, relationship }),
-  });
-  const data = await response.json();
-  if (response.ok && data.associatedPerson) {
-    return data.associatedPerson;
-  } else {
-    throw new Error(data.error || "Failed to add associated person. Please try again.");
-  }
-};
-
-export const deleteAssociatedPerson = async (personId: string, userId: string) => {
-  const response = await fetch(`/api/associated-people?id=${personId}&userId=${userId}`, {
-    method: "DELETE",
-  });
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || "Failed to delete associated person. Please try again.");
-  }
-};
-
 export const deleteUser = async (userId: string) => {
   const response = await fetch(`/api/users/${userId}`, {
     method: "DELETE",
@@ -518,32 +490,6 @@ export const fetchEditRideData = async (rideId: string) => {
     return await response.json();
   } catch (error) {
     console.error("Error fetching edit ride data:", error);
-    throw error;
-  }
-};
-
-// Replace the fetchCreateRideData function with this implementation
-export const fetchCreateRideData = async () => {
-  try {
-    const response = await fetch(`/api/user-data/create-ride`, {
-      cache: "no-cache", // Ensures we always make a request to the server
-      headers: {
-        "Cache-Control": "max-age=0",
-      },
-    });
-
-    if (response.status === 304) {
-      // Content hasn't changed, browser will use its cached data
-      return null;
-    }
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch create ride data");
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error("Error fetching create ride data:", error);
     throw error;
   }
 };

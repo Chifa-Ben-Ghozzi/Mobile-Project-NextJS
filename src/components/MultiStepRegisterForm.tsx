@@ -95,8 +95,8 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
     }
     try {
       const phoneNumber = parsePhoneNumber(formData.phone);
-      if (!phoneNumber || !phoneNumber.isValid()) {
-        throw new Error("Invalid phone number");
+      if (!phoneNumber || !phoneNumber.isValid() || phoneNumber.country !== "TN") {
+        throw new Error("Enter a valid Tunisian phone number.");
       }
       const e164PhoneNumber = phoneNumber.format("E.164");
       await onSubmit(formData.name, e164PhoneNumber, formData.email, formData.password);
@@ -157,10 +157,11 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
       fields: (
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number</Label>
+            <Label htmlFor="phone">Tunisian Phone Number</Label>
             <PhoneInput
               international
-              defaultCountry="PT"
+              defaultCountry="TN"
+              countries={["TN"]}
               value={formData.phone}
               onChange={(value) => {
                 if (value) {
@@ -171,6 +172,7 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
               }}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             />
+            <p className="text-sm text-muted-foreground">Use a phone number registered in Tunisia (+216).</p>
           </div>
         </div>
       ),
@@ -212,7 +214,7 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
               <div className="relative">
                 <div className="h-2 rounded bg-gray-200">
                   <div
-                    className={`h-full rounded ${passwordStrength === "Strong" ? "bg-green-500" : passwordStrength === "Medium" ? "bg-yellow-500" : "bg-red-500"}`}
+                    className={`h-full rounded ${passwordStrength === "Strong" ? "bg-zinc-600" : passwordStrength === "Medium" ? "bg-zinc-400" : "bg-red-500"}`}
                     style={{
                       width:
                         passwordStrength === "Strong"
@@ -226,7 +228,7 @@ export function MultiStepRegisterForm({ onSubmit, isLoading }: MultiStepRegister
                   />
                 </div>
                 <p
-                  className={`text-sm mt-1 ${passwordStrength === "Strong" ? "text-green-500" : passwordStrength === "Medium" ? "text-yellow-500" : "text-red-500"}`}
+                  className={`text-sm mt-1 ${passwordStrength === "Strong" ? "text-zinc-600 dark:text-zinc-300" : passwordStrength === "Medium" ? "text-zinc-500" : "text-red-500"}`}
                 >
                   {passwordStrength}
                 </p>
