@@ -7,6 +7,7 @@ import {
   driverOfferMigrationMessage,
   isMissingDriverOfferSchema,
   parseDriverOfferInput,
+  validateDriverOfferCapacity,
 } from "@/lib/driverOffer";
 import { isUuid } from "@/lib/uuid";
 
@@ -71,6 +72,11 @@ export async function POST(request: Request) {
     if (!vehicle) {
       return NextResponse.json({ error: "Choose one of your active cars." }, { status: 400 });
     }
+    const capacityError = validateDriverOfferCapacity(
+      parsed.offer.available_places,
+      vehicle.seats
+    );
+    if (capacityError) return NextResponse.json({ error: capacityError }, { status: 400 });
 
     const { data: offer, error } = await database
       .collection("driver_offers")

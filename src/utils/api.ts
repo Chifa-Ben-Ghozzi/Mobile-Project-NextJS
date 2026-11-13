@@ -121,6 +121,13 @@ export const updateDriverOffer = async (
   return data.offer;
 };
 
+export const cancelDriverOffer = async (id: string): Promise<DriverOffer> => {
+  const data = await readDriverOfferResponse(
+    await fetch(`/api/driver-offers/${id}`, { method: "PATCH" })
+  );
+  return data.offer;
+};
+
 export const deleteDriverOffer = async (id: string): Promise<void> => {
   await readDriverOfferResponse(
     await fetch(`/api/driver-offers/${id}`, { method: "DELETE" })

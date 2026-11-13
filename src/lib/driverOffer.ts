@@ -29,6 +29,12 @@ export function parseDriverOfferInput(value: unknown):
     return { error: "Enter a valid departure date and time." };
   }
   if (
+    input.status === "active" &&
+    Date.parse(departureTime) <= Date.now()
+  ) {
+    return { error: "Departure date and time must be in the future." };
+  }
+  if (
     typeof input.offered_price !== "number" ||
     !Number.isFinite(input.offered_price) ||
     input.offered_price < 0 ||
@@ -68,6 +74,13 @@ export function parseDriverOfferInput(value: unknown):
       status: input.status as DriverOfferInput["status"],
     },
   };
+}
+
+export function validateDriverOfferCapacity(availablePlaces: number, vehicleSeats: number) {
+  if (vehicleSeats < 2 || availablePlaces > vehicleSeats - 1) {
+    return `Available places cannot exceed the car's ${Math.max(0, vehicleSeats - 1)} passenger seats.`;
+  }
+  return null;
 }
 
 export function isMissingDriverOfferSchema(error: unknown) {

@@ -7,6 +7,7 @@ import {
   driverOfferMigrationMessage,
   isMissingDriverOfferSchema,
   parseDriverOfferInput,
+  validateDriverOfferCapacity,
 } from "@/lib/driverOffer";
 import { isUuid } from "@/lib/uuid";
 
@@ -41,6 +42,11 @@ export async function PUT(request: Request, { params }: RouteProps) {
     if (!vehicle) {
       return NextResponse.json({ error: "Choose one of your active cars." }, { status: 400 });
     }
+    const capacityError = validateDriverOfferCapacity(
+      parsed.offer.available_places,
+      vehicle.seats
+    );
+    if (capacityError) return NextResponse.json({ error: capacityError }, { status: 400 });
 
     const { data: offer, error } = await database
       .collection("driver_offers")
@@ -58,6 +64,40 @@ export async function PUT(request: Request, { params }: RouteProps) {
       return NextResponse.json({ error: driverOfferMigrationMessage }, { status: 503 });
     }
     return NextResponse.json({ error: "Failed to update ride offer." }, { status: 500 });
+  }
+}
+
+export async function PATCH(_request: Request, { params }: RouteProps) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id || !isUuid(session.user.id)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const { id } = await params;
+  if (!isUuid(id)) return NextResponse.json({ error: "Invalid offer ID." }, { status: 400 });
+
+  try {
+    const { data: offer, error } = await database
+      .collection("driver_offers")
+      .update({ status: "cancelled" })
+      .eq("id", id)
+      .eq("driver_id", session.user.id)
+      .eq("status", "active")
+      .select()
+      .maybeSingle();
+    if (error) throw error;
+    if (!offer) {
+      return NextResponse.json(
+        { error: "Active ride offer not found or already cancelled." },
+        { status: 404 }
+      );
+    }
+    return NextResponse.json({ offer });
+  } catch (error) {
+    console.error(`Failed to cancel driver offer ${id}:`, error);
+    if (isMissingDriverOfferSchema(error)) {
+      return NextResponse.json({ error: driverOfferMigrationMessage }, { status: 503 });
+    }
+    return NextResponse.json({ error: "Failed to cancel ride offer." }, { status: 500 });
   }
 }
 
