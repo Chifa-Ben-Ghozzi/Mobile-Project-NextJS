@@ -9,6 +9,7 @@ import type {
   VehicleInput,
   DriverOffer,
   DriverOfferInput,
+  MaintenanceLog,
 } from "../types";
 
 export const createRide = async (rideData: RideData) => {
@@ -670,6 +671,81 @@ export async function updateBugReportStatus(
 
   return await response.json();
 }
+
+async function readMaintenanceResponse(response: Response) {
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || "Maintenance operation failed.");
+  return data;
+}
+
+export const fetchVehicleMaintenance = async (vehicleId: string): Promise<MaintenanceLog[]> => {
+  const data = await readMaintenanceResponse(
+    await fetch(`/api/vehicles/${vehicleId}/maintenance`, { cache: "no-store" })
+  );
+  return data.maintenance ?? [];
+};
+
+export const createMaintenanceLog = async (
+  vehicleId: string,
+  payload: Record<string, unknown>
+): Promise<MaintenanceLog> => {
+  const data = await readMaintenanceResponse(
+    await fetch(`/api/vehicles/${vehicleId}/maintenance`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+  );
+  return data.maintenance;
+};
+
+export const updateMaintenanceLog = async (
+  vehicleId: string,
+  logId: string,
+  payload: Record<string, unknown>
+): Promise<MaintenanceLog> => {
+  const data = await readMaintenanceResponse(
+    await fetch(`/api/vehicles/${vehicleId}/maintenance/${logId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+  );
+  return data.maintenance;
+};
+
+export const deleteMaintenanceLog = async (vehicleId: string, logId: string): Promise<void> => {
+  await readMaintenanceResponse(
+    await fetch(`/api/vehicles/${vehicleId}/maintenance/${logId}`, { method: "DELETE" })
+  );
+};
+
+export const fetchAllMaintenance = async (): Promise<MaintenanceLog[]> => {
+  const data = await readMaintenanceResponse(
+    await fetch("/api/maintenance", { cache: "no-store" })
+  );
+  return data.maintenance ?? [];
+};
+
+export const fetchMaintenanceReminders = async (): Promise<MaintenanceLog[]> => {
+  const data = await readMaintenanceResponse(
+    await fetch("/api/maintenance/reminders", { cache: "no-store" })
+  );
+  return data.reminders ?? [];
+};
+
+export const checkMaintenanceReminders = async (): Promise<{ sent: number; total: number }> => {
+  const data = await readMaintenanceResponse(
+    await fetch("/api/maintenance/reminders/check", { method: "POST" })
+  );
+  return { sent: data.sent, total: data.total };
+};
+
+export const exportMaintenance = (format: "csv" | "html" = "csv", vehicleId?: string) => {
+  const params = new URLSearchParams({ format });
+  if (vehicleId) params.set("vehicleId", vehicleId);
+  window.open(`/api/maintenance/export?${params.toString()}`, "_blank");
+};
 
 export const fetchNotifications = async () => {
   try {

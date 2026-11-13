@@ -52,6 +52,45 @@ export type Vehicle = {
   created_at: string;
 };
 
+export type MaintenanceType =
+  | "oil_change"
+  | "tire_rotation"
+  | "brake_pads"
+  | "battery"
+  | "inspection"
+  | "insurance"
+  | "registration"
+  | "license"
+  | "other";
+
+export type MaintenanceStatus = "ok" | "due_soon" | "overdue";
+
+export type VehicleMaintenance = {
+  id: string;
+  vehicle_id: string;
+  user_id: string;
+  type: MaintenanceType;
+  title: string;
+  description: string | null;
+  performed_at: string;
+  mileage_km: number | null;
+  cost: number | null;
+  receipt_url: string | null;
+  next_due_at: string | null;
+  next_due_mileage: number | null;
+  status: MaintenanceStatus;
+  created_at: string;
+  updated_at: string;
+  vehicle?: { make_model: string; year: number | null; color: string | null };
+};
+
+export type MaintenanceLog = VehicleMaintenance;
+
+export type VehicleMaintenanceInput = Omit<
+  VehicleMaintenance,
+  "id" | "user_id" | "vehicle_id" | "status" | "created_at" | "updated_at" | "vehicle"
+>;
+
 export type VehicleInput = Omit<Vehicle, "id" | "user_id" | "created_at">;
 export type VehicleSnapshot = Omit<Vehicle, "user_id" | "created_at" | "is_active">;
 
