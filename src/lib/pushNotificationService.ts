@@ -7,11 +7,13 @@ const vapidKeys = {
   privateKey: process.env.VAPID_PRIVATE_KEY,
 };
 
-setVapidDetails(
-  "mailto:rideshareapp.mail@gmail.com",
-  vapidKeys.publicKey as string,
-  vapidKeys.privateKey as string
-);
+if (vapidKeys.publicKey && vapidKeys.privateKey) {
+  setVapidDetails(
+    "mailto:rideshareapp.mail@gmail.com",
+    vapidKeys.publicKey,
+    vapidKeys.privateKey
+  );
+}
 
 export async function sendPushNotification(
   subscription: webpush.PushSubscription,

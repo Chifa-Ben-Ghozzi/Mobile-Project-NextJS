@@ -16,6 +16,39 @@ type SelectOptions = {
   head?: boolean;
 };
 
+type DnsOverHttpsResponse = {
+  Answer?: Array<{ data?: string; type?: number | string }>;
+};
+
+const mongoDnsCache = new Map<string, string>();
+
+async function resolveMongoHost(hostname: string): Promise<string> {
+  const cachedAddress = mongoDnsCache.get(hostname);
+  if (cachedAddress) return cachedAddress;
+
+  const response = await fetch(
+    `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(hostname)}&type=A`,
+    {
+      headers: { accept: "application/dns-json" },
+      cache: "no-store",
+    }
+  );
+  if (!response.ok) {
+    throw new Error(`DNS-over-HTTPS lookup failed for ${hostname}: ${response.status}`);
+  }
+
+  const result = (await response.json()) as DnsOverHttpsResponse;
+  const address = result.Answer?.find(
+    (answer) => Number(answer.type) === 1 && typeof answer.data === "string"
+  )?.data;
+  if (!address) {
+    throw new Error(`No IPv4 address found for MongoDB host ${hostname}`);
+  }
+
+  mongoDnsCache.set(hostname, address);
+  return address;
+}
+
 export type DatabaseResult<T> =
   | { data: T; error: null; count: number | null }
   | { data: null; error: DatabaseError; count: number | null };
@@ -32,6 +65,7 @@ const indexedCollections = [
   "users",
   "rides",
   "vehicles",
+  "vehicle_maintenance",
   "driver_offers",
   "bug_reports",
   "contacts",
@@ -106,7 +140,25 @@ async function getMongoDatabase(): Promise<Db> {
   }
 
   if (!globalThis.mongoClientPromise) {
-    const client = new MongoClient(uri);
+    // Windows resolves Atlas with nslookup, but Node's DNS API fails on its
+    // CNAME chain in this environment. Resolve only MongoDB hosts over HTTPS.
+    const lookup = (
+      hostname: string,
+      options: { all?: boolean },
+      callback: (...args: unknown[]) => void
+    ) => {
+      resolveMongoHost(hostname)
+        .then((address) => {
+          if (options.all) {
+            callback(null, [{ address, family: 4 }]);
+            return;
+          }
+          callback(null, address, 4);
+        })
+        .catch((error: NodeJS.ErrnoException) => callback(error));
+    };
+
+    const client = new MongoClient(uri, { lookup: lookup as any });
     globalThis.mongoClientPromise = client.connect().catch((error: unknown) => {
       globalThis.mongoClientPromise = undefined;
       throw error;
@@ -311,6 +363,10 @@ function addDefaults(collection: string, input: MongoDocument): MongoDocument {
       document.smoking_policy ??= "non_smoking";
       document.is_active ??= true;
       break;
+    case "vehicle_maintenance":
+      document.status ??= "ok";
+      document.type ??= "other";
+      break;
     case "driver_offers":
       document.status ??= "active";
       break;
@@ -429,9 +485,12 @@ async function deleteRelatedDocuments(db: Db, collection: string, documents: Mon
   if (collection === "vehicles") {
     const vehicleIds = documents.map((document) => document.id).filter(Boolean);
     if (vehicleIds.length > 0) {
-      await db
-        .collection("driver_offers")
-        .updateMany({ vehicle_id: { $in: vehicleIds } }, { $set: { vehicle_id: null } });
+      await Promise.all([
+        db
+          .collection("driver_offers")
+          .updateMany({ vehicle_id: { $in: vehicleIds } }, { $set: { vehicle_id: null } }),
+        db.collection("vehicle_maintenance").deleteMany({ vehicle_id: { $in: vehicleIds } }),
+      ]);
     }
     return;
   }

@@ -1,8 +1,10 @@
 "use client";
 
-import { Car, Loader, Pencil, Plus, Trash2 } from "lucide-react";
+import { Car, Loader, Pencil, Plus, Trash2, Wrench } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+
+import { MaintenanceManager } from "@/components/MaintenanceManager";
 
 import {
   AlertDialog,
@@ -67,6 +69,7 @@ export function VehicleManager() {
   const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null);
   const [vehicleToDelete, setVehicleToDelete] = useState<Vehicle | null>(null);
   const [vehicleDraft, setVehicleDraft] = useState<VehicleInput>(emptyVehicle);
+  const [maintenanceVehicle, setMaintenanceVehicle] = useState<Vehicle | null>(null);
   const isOnline = useOnlineStatus();
 
   const loadVehicles = useCallback(async () => {
@@ -159,9 +162,49 @@ export function VehicleManager() {
               Manage the vehicle details drivers can attach to ride offers.
             </CardDescription>
           </div>
-          <Button onClick={openCreateDialog} disabled={!isOnline}>
-            <Plus className="h-4 w-4 mr-2" /> Add car
-          </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!isOnline}
+              onClick={async () => {
+                try {
+                  const r = await (await fetch("/api/maintenance/reminders/check", { method: "POST" })).json();
+                  if (r.total === 0) toast.success("No maintenance reminders due.");
+                  else toast.success(`${r.sent} reminder(s) sent.`);
+                } catch {
+                  toast.error("Failed to check reminders.");
+                }
+              }}
+            >
+              🔔 Check reminders
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!isOnline}
+              onClick={() => {
+                // CSV download
+                const a = document.createElement("a");
+                a.href = "/api/maintenance/export?format=csv";
+                a.download = "maintenance-history.csv";
+                a.click();
+              }}
+            >
+              📥 Export CSV
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!isOnline}
+              onClick={() => window.open("/api/maintenance/export?format=html", "_blank")}
+            >
+              🖨️ Export PDF
+            </Button>
+            <Button onClick={openCreateDialog} disabled={!isOnline}>
+              <Plus className="h-4 w-4 mr-2" /> Add car
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -219,6 +262,16 @@ export function VehicleManager() {
                           disabled={!isOnline}
                         />
                       </div>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        aria-label={`Maintenance ${vehicle.make_model}`}
+                        onClick={() => setMaintenanceVehicle(vehicle)}
+                        disabled={!isOnline}
+                        title="Maintenance"
+                      >
+                        <Wrench className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="outline"
                         size="icon"
@@ -418,6 +471,14 @@ export function VehicleManager() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {maintenanceVehicle && (
+        <MaintenanceManager
+          vehicle={maintenanceVehicle}
+          open={!!maintenanceVehicle}
+          onOpenChange={(open) => { if (!open) setMaintenanceVehicle(null); }}
+        />
+      )}
     </>
   );
 }
