@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarClock, Car, Loader, MapPin, Pencil, Plus, Trash2, Users } from "lucide-react";
+import { Ban, CalendarClock, Car, Loader, MapPin, Pencil, Plus, Users } from "lucide-react";
 import Link from "next/link";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
@@ -38,7 +38,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { DriverOffer, DriverOfferInput, User, Vehicle } from "@/types";
 import {
   createDriverOffer,
-  deleteDriverOffer,
+  cancelDriverOffer,
   fetchDriverOffers,
   fetchVehicles,
   updateDriverOffer,
@@ -76,7 +76,8 @@ export default function DriverOffersPage({ currentUser }: DriverOffersPageProps)
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editingOfferId, setEditingOfferId] = useState<string | null>(null);
-  const [offerToDelete, setOfferToDelete] = useState<DriverOffer | null>(null);
+  const [offerToCancel, setOfferToCancel] = useState<DriverOffer | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
   const [draft, setDraft] = useState<DriverOfferInput>(makeInitialDraft);
   const isOnline = useOnlineStatus();
 
@@ -158,20 +159,26 @@ export default function DriverOffersPage({ currentUser }: DriverOffersPageProps)
     }
   };
 
-  const removeOffer = async () => {
-    if (!offerToDelete) return;
+  const cancelOffer = async () => {
+    if (!offerToCancel) return;
+    setIsCancelling(true);
     try {
-      await deleteDriverOffer(offerToDelete.id);
-      setOffers((current) => current.filter((offer) => offer.id !== offerToDelete.id));
-      toast.success("Ride offer deleted.");
+      const cancelledOffer = await cancelDriverOffer(offerToCancel.id);
+      setOffers((current) =>
+        current.map((offer) => (offer.id === cancelledOffer.id ? cancelledOffer : offer))
+      );
+      toast.success("Ride offer cancelled.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not delete the ride offer.");
+      toast.error(error instanceof Error ? error.message : "Could not cancel the ride offer.");
     } finally {
-      setOfferToDelete(null);
+      setIsCancelling(false);
+      setOfferToCancel(null);
     }
   };
 
   const activeVehicles = vehicles.filter((vehicle) => vehicle.is_active);
+  const selectedVehicle = activeVehicles.find((vehicle) => vehicle.id === draft.vehicle_id);
+  const maxAvailablePlaces = selectedVehicle ? Math.max(0, selectedVehicle.seats - 1) : 0;
   const visibleOffers = offers.filter(
     (offer) => offer.status === "active" || offer.driver_id === currentUser.id
   );
@@ -297,7 +304,7 @@ export default function DriverOffersPage({ currentUser }: DriverOffersPageProps)
                     {offer.message && (
                       <p className="text-sm text-muted-foreground break-words">{offer.message}</p>
                     )}
-                    {isOwner && (
+                    {isOwner && offer.status === "active" && (
                       <div className="flex flex-wrap gap-2 pt-2">
                         <Button
                           variant="outline"
@@ -310,10 +317,10 @@ export default function DriverOffersPage({ currentUser }: DriverOffersPageProps)
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setOfferToDelete(offer)}
+                          onClick={() => setOfferToCancel(offer)}
                           disabled={!isOnline}
                         >
-                          <Trash2 className="h-4 w-4 mr-2 text-destructive" /> Delete
+                          <Ban className="h-4 w-4 mr-2 text-destructive" /> Cancel trip
                         </Button>
                       </div>
                     )}
@@ -365,6 +372,7 @@ export default function DriverOffersPage({ currentUser }: DriverOffersPageProps)
                   id="offer_departure"
                   type="datetime-local"
                   required
+                  min={toLocalDateTime(new Date().toISOString())}
                   value={toLocalDateTime(draft.departure_time)}
                   onChange={(event) =>
                     setDraft((current) => ({ ...current, departure_time: event.target.value }))
@@ -377,7 +385,7 @@ export default function DriverOffersPage({ currentUser }: DriverOffersPageProps)
                   id="offer_places"
                   type="number"
                   min={1}
-                  max={20}
+                  max={maxAvailablePlaces || 20}
                   required
                   value={draft.available_places}
                   onChange={(event) =>
@@ -451,23 +459,11 @@ export default function DriverOffersPage({ currentUser }: DriverOffersPageProps)
                   placeholder="Add details for passengers"
                 />
               </div>
-              {editingOfferId && (
-                <div className="space-y-2">
-                  <Label>Offer status</Label>
-                  <Select
-                    value={draft.status}
-                    onValueChange={(status: DriverOfferInput["status"]) =>
-                      setDraft((current) => ({ ...current, status }))
-                    }
-                  >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              {selectedVehicle && (
+                <p className="text-sm text-muted-foreground sm:col-span-2">
+                  This car has {maxAvailablePlaces} passenger seat{maxAvailablePlaces === 1 ? "" : "s"}
+                  available (excluding the driver).
+                </p>
               )}
             </div>
             <DialogFooter>
@@ -477,7 +473,8 @@ export default function DriverOffersPage({ currentUser }: DriverOffersPageProps)
                   isSaving ||
                   !isOnline ||
                   activeVehicles.length === 0 ||
-                  !draft.vehicle_id
+                  !draft.vehicle_id ||
+                  draft.available_places > maxAvailablePlaces
                 }
               >
                 {isSaving && <Loader className="h-4 w-4 mr-2 animate-spin" />}
@@ -489,19 +486,22 @@ export default function DriverOffersPage({ currentUser }: DriverOffersPageProps)
       </Dialog>
 
       <AlertDialog
-        open={!!offerToDelete}
-        onOpenChange={(open) => !open && setOfferToDelete(null)}
+        open={!!offerToCancel}
+        onOpenChange={(open) => !open && !isCancelling && setOfferToCancel(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this ride offer?</AlertDialogTitle>
+            <AlertDialogTitle>Cancel this ride offer?</AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently removes your trip announcement.
+              The offer will no longer be available to passengers, but it will remain in your ride
+              history.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Keep offer</AlertDialogCancel>
-            <AlertDialogAction onClick={removeOffer}>Delete offer</AlertDialogAction>
+            <AlertDialogCancel disabled={isCancelling}>Keep offer</AlertDialogCancel>
+            <AlertDialogAction onClick={cancelOffer} disabled={isCancelling}>
+              {isCancelling ? "Cancelling..." : "Cancel trip"}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
