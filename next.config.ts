@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+
+  serverExternalPackages: ["web-push"],
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   webpack: (config: any, { isServer }: { isServer: boolean }) => {
     if (!isServer) {
