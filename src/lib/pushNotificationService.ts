@@ -1,4 +1,5 @@
-import webpush, { sendNotification, setVapidDetails, WebPushError } from "web-push";
+
+import webpush from "web-push";
 
 import { database } from "./db";
 
@@ -8,7 +9,7 @@ const vapidKeys = {
 };
 
 if (vapidKeys.publicKey && vapidKeys.privateKey) {
-  setVapidDetails(
+  webpush.setVapidDetails(
     "mailto:rideshareapp.mail@gmail.com",
     vapidKeys.publicKey,
     vapidKeys.privateKey
@@ -18,31 +19,43 @@ if (vapidKeys.publicKey && vapidKeys.privateKey) {
 export async function sendPushNotification(
   subscription: webpush.PushSubscription,
   payload: string
-) {
+): Promise<boolean> {
   try {
-    await sendNotification(subscription, payload);
+    await webpush.sendNotification(subscription, payload);
     return true;
-  } catch (error) {
-    if (error instanceof WebPushError && error.statusCode === 410) {
+  } catch (error: unknown) {
+    if (
+      error instanceof Error &&
+      "statusCode" in error &&
+      error.statusCode === 410
+    ) {
       return false;
     }
+
     throw error;
   }
 }
 
-export async function sendImmediateNotification(userId: string, title: string, body: string) {
+export async function sendImmediateNotification(
+  userId: string,
+  title: string,
+  body: string
+): Promise<void> {
   const oneWeekAgo = new Date();
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
-  const { data: subscriptionData, error: subscriptionError } = await database
-    .collection("push_subscriptions")
-    .select("id, subscription, enabled, last_used")
-    .eq("user_id", userId)
-    .eq("enabled", true)
-    .gte("last_used", oneWeekAgo.toISOString())
-    .order("last_used", { ascending: false });
+  const { data: subscriptionData, error: subscriptionError } =
+    await database
+      .collection("push_subscriptions")
+      .select("id, subscription, enabled, last_used")
+      .eq("user_id", userId)
+      .eq("enabled", true)
+      .gte("last_used", oneWeekAgo.toISOString())
+      .order("last_used", { ascending: false });
 
-  if (subscriptionError) throw subscriptionError;
+  if (subscriptionError) {
+    throw subscriptionError;
+  }
 
   if (subscriptionData && subscriptionData.length > 0) {
     const payload = JSON.stringify({ title, body });
@@ -51,8 +64,15 @@ export async function sendImmediateNotification(userId: string, title: string, b
     await Promise.all(
       subscriptionData.map(async (sub) => {
         const subscription =
-          typeof sub.subscription === "string" ? JSON.parse(sub.subscription) : sub.subscription;
-        const success = await sendPushNotification(subscription, payload);
+          typeof sub.subscription === "string"
+            ? JSON.parse(sub.subscription)
+            : sub.subscription;
+
+        const success = await sendPushNotification(
+          subscription,
+          payload
+        );
+
         if (!success) {
           expiredSubscriptions.push(sub.id);
         }
@@ -61,7 +81,10 @@ export async function sendImmediateNotification(userId: string, title: string, b
 
     // Remove expired subscriptions
     if (expiredSubscriptions.length > 0) {
-      await database.collection("push_subscriptions").delete().in("id", expiredSubscriptions);
+      await database
+        .collection("push_subscriptions")
+        .delete()
+        .in("id", expiredSubscriptions);
     }
   }
 }
