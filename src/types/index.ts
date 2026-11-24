@@ -98,7 +98,11 @@ export type DriverOfferStatus = "active" | "cancelled" | "completed";
 
 export type DriverOfferInput = {
   from_location: string;
+  from_lat: number | null;
+  from_lon: number | null;
   to_location: string;
+  to_lat: number | null;
+  to_lon: number | null;
   departure_time: string;
   offered_price: number;
   available_places: number;

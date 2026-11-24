@@ -13,6 +13,10 @@ export function parseDriverOfferInput(value: unknown):
   const input = value as Record<string, unknown>;
   const fromLocation = typeof input.from_location === "string" ? input.from_location.trim() : "";
   const toLocation = typeof input.to_location === "string" ? input.to_location.trim() : "";
+  const fromLat = typeof input.from_lat === "number" ? input.from_lat : null;
+  const fromLon = typeof input.from_lon === "number" ? input.from_lon : null;
+  const toLat = typeof input.to_lat === "number" ? input.to_lat : null;
+  const toLon = typeof input.to_lon === "number" ? input.to_lon : null;
   const departureTime =
     typeof input.departure_time === "string" ? input.departure_time : "";
   const pickupDetails =
@@ -24,6 +28,22 @@ export function parseDriverOfferInput(value: unknown):
   }
   if (!toLocation || toLocation.length > 255) {
     return { error: "Destination is required and must be 255 characters or fewer." };
+  }
+  if (
+    fromLat === null ||
+    fromLon === null ||
+    toLat === null ||
+    toLon === null ||
+    !Number.isFinite(fromLat) ||
+    !Number.isFinite(fromLon) ||
+    !Number.isFinite(toLat) ||
+    !Number.isFinite(toLon) ||
+    fromLat === 0 ||
+    fromLon === 0 ||
+    toLat === 0 ||
+    toLon === 0
+  ) {
+    return { error: "Select both the starting point and destination on the map." };
   }
   if (!Number.isFinite(Date.parse(departureTime))) {
     return { error: "Enter a valid departure date and time." };
@@ -64,7 +84,11 @@ export function parseDriverOfferInput(value: unknown):
   return {
     offer: {
       from_location: fromLocation,
+      from_lat: fromLat,
+      from_lon: fromLon,
       to_location: toLocation,
+      to_lat: toLat,
+      to_lon: toLon,
       departure_time: new Date(departureTime).toISOString(),
       offered_price: input.offered_price,
       available_places: input.available_places,
@@ -90,7 +114,7 @@ export function isMissingDriverOfferSchema(error: unknown) {
     (databaseError.code === "PGRST205" ||
       databaseError.code === "PGRST204" ||
       databaseError.code === "42703") &&
-    /driver_offers|vehicle_snapshot|available_places|offered_price/i.test(
+    /driver_offers|vehicle_snapshot|available_places|offered_price|from_lat|from_lon|to_lat|to_lon/i.test(
       databaseError.message || ""
     )
   );

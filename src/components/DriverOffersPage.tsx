@@ -4,6 +4,7 @@ import { Ban, CalendarClock, Car, Loader, MapPin, Pencil, Plus, Users } from "lu
 import Link from "next/link";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { toast } from "sonner";
 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -49,9 +50,16 @@ interface DriverOffersPageProps {
   currentUser: User;
 }
 
+const LocationSearch = dynamic(() => import("./LocationSearch"), { ssr: false });
+const MapDialog = dynamic(() => import("./MapDialog"), { ssr: false });
+
 const makeInitialDraft = (): DriverOfferInput => ({
   from_location: "",
+  from_lat: null,
+  from_lon: null,
   to_location: "",
+  to_lat: null,
+  to_lon: null,
   departure_time: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
   offered_price: 0,
   available_places: 1,
@@ -76,6 +84,8 @@ export default function DriverOffersPage({ currentUser }: DriverOffersPageProps)
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editingOfferId, setEditingOfferId] = useState<string | null>(null);
+  const [isFromMapOpen, setIsFromMapOpen] = useState(false);
+  const [isToMapOpen, setIsToMapOpen] = useState(false);
   const [offerToCancel, setOfferToCancel] = useState<DriverOffer | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const [draft, setDraft] = useState<DriverOfferInput>(makeInitialDraft);
@@ -120,7 +130,11 @@ export default function DriverOffersPage({ currentUser }: DriverOffersPageProps)
     setEditingOfferId(offer.id);
     setDraft({
       from_location: offer.from_location,
+      from_lat: offer.from_lat,
+      from_lon: offer.from_lon,
       to_location: offer.to_location,
+      to_lat: offer.to_lat,
+      to_lon: offer.to_lon,
       departure_time: offer.departure_time,
       offered_price: offer.offered_price,
       available_places: offer.available_places,
@@ -137,6 +151,17 @@ export default function DriverOffersPage({ currentUser }: DriverOffersPageProps)
 
   const saveOffer = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (
+      !draft.from_location ||
+      !draft.to_location ||
+      draft.from_lat === null ||
+      draft.from_lon === null ||
+      draft.to_lat === null ||
+      draft.to_lon === null
+    ) {
+      toast.error("Select both From and To locations on the map.");
+      return;
+    }
     setIsSaving(true);
     try {
       const payload = {
@@ -344,26 +369,34 @@ export default function DriverOffersPage({ currentUser }: DriverOffersPageProps)
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="offer_from">From</Label>
-                <Input
-                  id="offer_from"
-                  required
-                  maxLength={255}
-                  value={draft.from_location}
-                  onChange={(event) =>
-                    setDraft((current) => ({ ...current, from_location: event.target.value }))
+                <LocationSearch
+                  selectedLocation={
+                    draft.from_location
+                      ? {
+                          lat: draft.from_lat || 0,
+                          lon: draft.from_lon || 0,
+                          display_name: draft.from_location,
+                        }
+                      : null
                   }
+                  label="From Location"
+                  onOpenMap={() => setIsFromMapOpen(true)}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="offer_to">To</Label>
-                <Input
-                  id="offer_to"
-                  required
-                  maxLength={255}
-                  value={draft.to_location}
-                  onChange={(event) =>
-                    setDraft((current) => ({ ...current, to_location: event.target.value }))
+                <LocationSearch
+                  selectedLocation={
+                    draft.to_location
+                      ? {
+                          lat: draft.to_lat || 0,
+                          lon: draft.to_lon || 0,
+                          display_name: draft.to_location,
+                        }
+                      : null
                   }
+                  label="To Location"
+                  onOpenMap={() => setIsToMapOpen(true)}
                 />
               </div>
               <div className="space-y-2">
@@ -474,6 +507,12 @@ export default function DriverOffersPage({ currentUser }: DriverOffersPageProps)
                   !isOnline ||
                   activeVehicles.length === 0 ||
                   !draft.vehicle_id ||
+                  !draft.from_location ||
+                  !draft.to_location ||
+                  draft.from_lat === null ||
+                  draft.from_lon === null ||
+                  draft.to_lat === null ||
+                  draft.to_lon === null ||
                   draft.available_places > maxAvailablePlaces
                 }
               >
@@ -484,6 +523,41 @@ export default function DriverOffersPage({ currentUser }: DriverOffersPageProps)
           </form>
         </DialogContent>
       </Dialog>
+
+      <MapDialog
+        isOpen={isFromMapOpen}
+        onClose={() => setIsFromMapOpen(false)}
+        initialLocation={
+          draft.from_lat && draft.from_lon
+            ? { lat: draft.from_lat, lon: draft.from_lon }
+            : undefined
+        }
+        onSelectLocation={(location) =>
+          setDraft((current) => ({
+            ...current,
+            from_location: location.display_name,
+            from_lat: location.lat,
+            from_lon: location.lon,
+          }))
+        }
+      />
+      <MapDialog
+        isOpen={isToMapOpen}
+        onClose={() => setIsToMapOpen(false)}
+        initialLocation={
+          draft.to_lat && draft.to_lon
+            ? { lat: draft.to_lat, lon: draft.to_lon }
+            : undefined
+        }
+        onSelectLocation={(location) =>
+          setDraft((current) => ({
+            ...current,
+            to_location: location.display_name,
+            to_lat: location.lat,
+            to_lon: location.lon,
+          }))
+        }
+      />
 
       <AlertDialog
         open={!!offerToCancel}
