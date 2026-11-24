@@ -97,7 +97,11 @@ CREATE TABLE IF NOT EXISTS public.driver_offers (
   vehicle_id uuid REFERENCES public.vehicles(id) ON DELETE SET NULL,
   vehicle_snapshot jsonb NOT NULL,
   from_location text NOT NULL,
+  from_lat numeric(10, 8),
+  from_lon numeric(11, 8),
   to_location text NOT NULL,
+  to_lat numeric(10, 8),
+  to_lon numeric(11, 8),
   departure_time timestamptz NOT NULL,
   offered_price numeric(10, 2) NOT NULL CHECK (offered_price >= 0),
   available_places integer NOT NULL CHECK (available_places BETWEEN 1 AND 20),
@@ -107,6 +111,12 @@ CREATE TABLE IF NOT EXISTS public.driver_offers (
     CHECK (status IN ('active', 'cancelled', 'completed')),
   created_at timestamptz NOT NULL DEFAULT now()
 );
+
+ALTER TABLE public.driver_offers
+  ADD COLUMN IF NOT EXISTS from_lat numeric(10, 8),
+  ADD COLUMN IF NOT EXISTS from_lon numeric(11, 8),
+  ADD COLUMN IF NOT EXISTS to_lat numeric(10, 8),
+  ADD COLUMN IF NOT EXISTS to_lon numeric(11, 8);
 
 CREATE INDEX IF NOT EXISTS idx_driver_offers_status_departure
   ON public.driver_offers(status, departure_time);
