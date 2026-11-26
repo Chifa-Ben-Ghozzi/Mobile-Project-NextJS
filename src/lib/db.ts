@@ -67,6 +67,7 @@ const indexedCollections = [
   "vehicles",
   "vehicle_maintenance",
   "driver_offers",
+  "driver_offer_requests",
   "bug_reports",
   "contacts",
   "email_verification_tokens",
@@ -94,6 +95,11 @@ async function createIndexes(db: Db) {
     db.collection("vehicles").createIndex({ user_id: 1 }),
     db.collection("driver_offers").createIndex({ status: 1, departure_time: 1 }),
     db.collection("driver_offers").createIndex({ driver_id: 1 }),
+    db.collection("driver_offer_requests").createIndex(
+      { offer_id: 1, requester_id: 1 },
+      { unique: true }
+    ),
+    db.collection("driver_offer_requests").createIndex({ requester_id: 1 }),
     db.collection("bug_reports").createIndex({ status: 1 }),
     db.collection("bug_reports").createIndex({ user_id: 1 }),
     db.collection("contacts").createIndex(
@@ -370,6 +376,9 @@ function addDefaults(collection: string, input: MongoDocument): MongoDocument {
     case "driver_offers":
       document.status ??= "active";
       break;
+    case "driver_offer_requests":
+      document.status ??= "pending";
+      break;
     case "reclamations":
       document.status ??= "pending";
       document.updated_at ??= now;
@@ -421,12 +430,14 @@ async function deleteRelatedDocuments(db: Db, collection: string, documents: Mon
   if (collection === "users") {
     const userIds = documents.map((document) => document.id).filter(Boolean);
     if (userIds.length === 0) return;
-    const [vehicleRecords, ownedRides, authoredMessages] = await Promise.all([
+    const [vehicleRecords, ownedRides, ownedOffers, authoredMessages] = await Promise.all([
       db.collection("vehicles").find({ user_id: { $in: userIds } }).project({ id: 1 }).toArray(),
       db.collection("rides").find({ requester_id: { $in: userIds } }).toArray(),
+      db.collection("driver_offers").find({ driver_id: { $in: userIds } }).project({ id: 1 }).toArray(),
       db.collection("forum_messages").find({ user_id: { $in: userIds } }).toArray(),
     ]);
     const vehicleIds = vehicleRecords.map((vehicle) => vehicle.id);
+    const offerIds = ownedOffers.map((offer) => offer.id);
     await Promise.all([
       deleteRelatedDocuments(db, "rides", ownedRides),
       deleteRelatedDocuments(db, "forum_messages", authoredMessages),
@@ -438,6 +449,12 @@ async function deleteRelatedDocuments(db: Db, collection: string, documents: Mon
       }),
       db.collection("email_verification_tokens").deleteMany({ user_id: { $in: userIds } }),
       db.collection("notifications").deleteMany({ user_id: { $in: userIds } }),
+      db.collection("driver_offer_requests").deleteMany({
+        $or: [
+          { requester_id: { $in: userIds } },
+          ...(offerIds.length > 0 ? [{ offer_id: { $in: offerIds } }] : []),
+        ],
+      }),
       db.collection("password_reset_tokens").deleteMany({ user_id: { $in: userIds } }),
       db.collection("push_subscriptions").deleteMany({ user_id: { $in: userIds } }),
       db.collection("bug_reports").deleteMany({ user_id: { $in: userIds } }),
@@ -479,6 +496,14 @@ async function deleteRelatedDocuments(db: Db, collection: string, documents: Mon
         { $set: { ride_id: null } }
       ),
     ]);
+    return;
+  }
+
+  if (collection === "driver_offers") {
+    const offerIds = documents.map((document) => document.id).filter(Boolean);
+    if (offerIds.length > 0) {
+      await db.collection("driver_offer_requests").deleteMany({ offer_id: { $in: offerIds } });
+    }
     return;
   }
 

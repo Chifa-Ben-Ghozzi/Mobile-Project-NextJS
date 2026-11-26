@@ -123,6 +123,18 @@ CREATE INDEX IF NOT EXISTS idx_driver_offers_status_departure
 CREATE INDEX IF NOT EXISTS idx_driver_offers_driver_id
   ON public.driver_offers(driver_id);
 
+CREATE TABLE IF NOT EXISTS public.driver_offer_requests (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  offer_id uuid NOT NULL REFERENCES public.driver_offers(id) ON DELETE CASCADE,
+  requester_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined')),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT driver_offer_requests_offer_requester_key UNIQUE (offer_id, requester_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_driver_offer_requests_requester_id
+  ON public.driver_offer_requests(requester_id);
+
 ALTER TABLE public.rides
   ADD COLUMN IF NOT EXISTS offered_vehicle jsonb;
 

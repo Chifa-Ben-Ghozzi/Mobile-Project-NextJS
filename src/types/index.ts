@@ -95,6 +95,16 @@ export type VehicleInput = Omit<Vehicle, "id" | "user_id" | "created_at">;
 export type VehicleSnapshot = Omit<Vehicle, "user_id" | "created_at" | "is_active">;
 
 export type DriverOfferStatus = "active" | "cancelled" | "completed";
+export type DriverOfferRequestStatus = "pending" | "accepted" | "declined";
+
+export type DriverOfferRequest = {
+  id: string;
+  offer_id: string;
+  requester_id: string;
+  requester_name: string;
+  status: DriverOfferRequestStatus;
+  created_at: string;
+};
 
 export type DriverOfferInput = {
   from_location: string;
@@ -118,6 +128,9 @@ export type DriverOffer = DriverOfferInput & {
   driver_name: string;
   vehicle_snapshot: VehicleSnapshot;
   created_at: string;
+  requested_by_me?: boolean;
+  my_request_status?: DriverOfferRequestStatus | null;
+  requests?: DriverOfferRequest[];
 };
 
 export type Contact = {

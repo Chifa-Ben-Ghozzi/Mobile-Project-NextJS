@@ -22,9 +22,38 @@ export async function GET() {
       .collection("driver_offers")
       .select("*")
       .or(`status.eq.active,driver_id.eq.${session.user.id}`)
-      .order("departure_time", { ascending: true })
+      .order("created_at", { ascending: false })
       .limit(100);
     if (error) throw error;
+
+    const { data: myRequests, error: myRequestsError } = await database
+      .collection("driver_offer_requests")
+      .select("offer_id,status")
+      .eq("requester_id", session.user.id);
+    if (myRequestsError) throw myRequestsError;
+    const myRequestStatuses = new Map(
+      myRequests.map((request) => [request.offer_id, request.status])
+    );
+
+    const ownedOfferIds = offers
+      .filter((offer) => offer.driver_id === session.user.id)
+      .map((offer) => offer.id);
+    const { data: receivedRequests, error: receivedRequestsError } = ownedOfferIds.length
+      ? await database
+          .collection("driver_offer_requests")
+          .select("id,offer_id,requester_id,status,created_at")
+          .in("offer_id", ownedOfferIds)
+      : { data: [], error: null };
+    if (receivedRequestsError) throw receivedRequestsError;
+
+    const requesterIds = Array.from(
+      new Set(receivedRequests.map((request) => request.requester_id).filter(isUuid))
+    );
+    const { data: requesters, error: requestersError } = requesterIds.length
+      ? await database.collection("users").select("id,name").in("id", requesterIds)
+      : { data: [], error: null };
+    if (requestersError) throw requestersError;
+    const requesterNames = new Map(requesters.map((requester) => [requester.id, requester.name]));
 
     const driverIds = Array.from(new Set(offers.map((offer) => offer.driver_id).filter(isUuid)));
     const { data: drivers, error: driversError } = driverIds.length
@@ -34,7 +63,21 @@ export async function GET() {
     const names = new Map(drivers.map((driver) => [driver.id, driver.name]));
 
     return NextResponse.json({
-      offers: offers.map((offer) => ({ ...offer, driver_name: names.get(offer.driver_id) || "Driver" })),
+      offers: offers.map((offer) => ({
+        ...offer,
+        driver_name: names.get(offer.driver_id) || "Driver",
+        requested_by_me: myRequestStatuses.has(offer.id),
+        my_request_status: myRequestStatuses.get(offer.id) || null,
+        requests:
+          offer.driver_id === session.user.id
+            ? receivedRequests
+                .filter((request) => request.offer_id === offer.id)
+                .map((request) => ({
+                  ...request,
+                  requester_name: requesterNames.get(request.requester_id) || "Passenger",
+                }))
+            : undefined,
+      })),
     });
   } catch (error) {
     console.error("Failed to load driver ride offers:", error);

@@ -97,6 +97,25 @@ export const fetchDriverOffers = async (): Promise<DriverOffer[]> => {
   return data.offers;
 };
 
+export const requestDriverOffer = async (id: string): Promise<void> => {
+  await readDriverOfferResponse(
+    await fetch(`/api/driver-offers/${id}/request`, { method: "POST" })
+  );
+};
+
+export const respondToDriverOfferRequest = async (
+  id: string,
+  decision: "accepted" | "declined"
+): Promise<void> => {
+  await readDriverOfferResponse(
+    await fetch(`/api/driver-offer-requests/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ decision }),
+    })
+  );
+};
+
 export const createDriverOffer = async (offer: DriverOfferInput): Promise<DriverOffer> => {
   const data = await readDriverOfferResponse(
     await fetch("/api/driver-offers", {

@@ -1,10 +1,22 @@
 "use client";
 
-import { Ban, CalendarClock, Car, Loader, MapPin, Pencil, Plus, Users } from "lucide-react";
+import {
+  Ban,
+  CalendarClock,
+  Car,
+  Check,
+  Loader,
+  MapPin,
+  Pencil,
+  Plus,
+  Search,
+  Users,
+  X,
+} from "lucide-react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
-import dynamic from "next/dynamic";
 import { toast } from "sonner";
 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -36,12 +48,14 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import type { DriverOffer, DriverOfferInput, User, Vehicle } from "@/types";
+import type { DriverOffer, DriverOfferInput, DriverOfferRequest, User, Vehicle } from "@/types";
 import {
   createDriverOffer,
   cancelDriverOffer,
   fetchDriverOffers,
   fetchVehicles,
+  requestDriverOffer,
+  respondToDriverOfferRequest,
   updateDriverOffer,
 } from "@/utils/api";
 import { useOnlineStatus } from "@/utils/useOnlineStatus";
@@ -88,6 +102,9 @@ export default function DriverOffersPage({ currentUser }: DriverOffersPageProps)
   const [isToMapOpen, setIsToMapOpen] = useState(false);
   const [offerToCancel, setOfferToCancel] = useState<DriverOffer | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [requestingOfferId, setRequestingOfferId] = useState<string | null>(null);
+  const [respondingRequestId, setRespondingRequestId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const [draft, setDraft] = useState<DriverOfferInput>(makeInitialDraft);
   const isOnline = useOnlineStatus();
 
@@ -201,12 +218,58 @@ export default function DriverOffersPage({ currentUser }: DriverOffersPageProps)
     }
   };
 
+  const requestOffer = async (offer: DriverOffer) => {
+    setRequestingOfferId(offer.id);
+    try {
+      await requestDriverOffer(offer.id);
+      setOffers((current) =>
+        current.map((item) =>
+          item.id === offer.id ? { ...item, requested_by_me: true } : item
+        )
+      );
+      toast.success("Ride request sent to the driver.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not request this ride.");
+    } finally {
+      setRequestingOfferId(null);
+    }
+  };
+
+  const decideOfferRequest = async (
+    rideRequest: DriverOfferRequest,
+    decision: "accepted" | "declined"
+  ) => {
+    setRespondingRequestId(rideRequest.id);
+    try {
+      await respondToDriverOfferRequest(rideRequest.id, decision);
+      toast.success(
+        decision === "accepted" ? "Ride request accepted." : "Ride request rejected."
+      );
+      await loadOffers();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not update the ride request.");
+    } finally {
+      setRespondingRequestId(null);
+    }
+  };
+
   const activeVehicles = vehicles.filter((vehicle) => vehicle.is_active);
   const selectedVehicle = activeVehicles.find((vehicle) => vehicle.id === draft.vehicle_id);
   const maxAvailablePlaces = selectedVehicle ? Math.max(0, selectedVehicle.seats - 1) : 0;
-  const visibleOffers = offers.filter(
-    (offer) => offer.status === "active" || offer.driver_id === currentUser.id
-  );
+  const normalizedSearchTerm = searchTerm.trim().toLocaleLowerCase();
+  const visibleOffers = offers
+    .filter((offer) => offer.status === "active" || offer.driver_id === currentUser.id)
+    .filter((offer) =>
+      [
+        offer.from_location,
+        offer.to_location,
+        offer.driver_name,
+        offer.message || "",
+        offer.pickup_details || "",
+        offer.vehicle_snapshot.make_model,
+      ].some((value) => value.toLocaleLowerCase().includes(normalizedSearchTerm))
+    )
+    .sort((first, second) => Date.parse(second.created_at) - Date.parse(first.created_at));
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
@@ -245,8 +308,20 @@ export default function DriverOffersPage({ currentUser }: DriverOffersPageProps)
         <div>
           <h2 className="text-xl font-semibold">Ride offers</h2>
           <p className="text-sm text-muted-foreground">
-            Active trips are visible to signed-in users. You can manage your own offers here.
+            Search active trips and request a ride. The driver will be notified of your request.
           </p>
+        </div>
+
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="search"
+            aria-label="Search ride offers"
+            placeholder="Search by route, driver, or car..."
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            className="pl-9"
+          />
         </div>
 
         {isLoading ? (
@@ -261,7 +336,9 @@ export default function DriverOffersPage({ currentUser }: DriverOffersPageProps)
         ) : visibleOffers.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center text-muted-foreground">
-              No active ride offers yet. Publish a trip to share your drive.
+              {normalizedSearchTerm
+                ? "No ride offers match your search."
+                : "No active ride offers yet. Publish a trip to share your drive."}
             </CardContent>
           </Card>
         ) : (
@@ -346,6 +423,72 @@ export default function DriverOffersPage({ currentUser }: DriverOffersPageProps)
                           disabled={!isOnline}
                         >
                           <Ban className="h-4 w-4 mr-2 text-destructive" /> Cancel trip
+                        </Button>
+                      </div>
+                    )}
+                    {isOwner && offer.requests && offer.requests.length > 0 && (
+                      <div className="space-y-3 rounded-md border p-3">
+                        <p className="text-sm font-semibold">Ride requests</p>
+                        {offer.requests.map((rideRequest) => (
+                          <div
+                            key={rideRequest.id}
+                            className="flex flex-col gap-3 border-t pt-3 sm:flex-row sm:items-center sm:justify-between"
+                          >
+                            <div className="space-y-1">
+                              <p className="text-sm font-medium">{rideRequest.requester_name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Requested {new Date(rideRequest.created_at).toLocaleString()}
+                              </p>
+                            </div>
+                            {rideRequest.status === "pending" && offer.status === "active" ? (
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => void decideOfferRequest(rideRequest, "accepted")}
+                                  disabled={!isOnline || respondingRequestId !== null}
+                                >
+                                  {respondingRequestId === rideRequest.id ? (
+                                    <Loader className="mr-2 h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Check className="mr-2 h-4 w-4" />
+                                  )}
+                                  Accept
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => void decideOfferRequest(rideRequest, "declined")}
+                                  disabled={!isOnline || respondingRequestId !== null}
+                                >
+                                  <X className="mr-2 h-4 w-4" />
+                                  Reject
+                                </Button>
+                              </div>
+                            ) : (
+                              <Badge variant={rideRequest.status === "accepted" ? "default" : "outline"}>
+                                {rideRequest.status === "declined" ? "rejected" : rideRequest.status}
+                              </Badge>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {!isOwner && offer.status === "active" && (
+                      <div className="pt-2">
+                        <Button
+                          onClick={() => void requestOffer(offer)}
+                          disabled={!isOnline || offer.requested_by_me || requestingOfferId !== null}
+                        >
+                          {requestingOfferId === offer.id && (
+                            <Loader className="mr-2 h-4 w-4 animate-spin" />
+                          )}
+                          {offer.my_request_status === "accepted"
+                            ? "Request accepted"
+                            : offer.my_request_status === "declined"
+                              ? "Request rejected"
+                              : offer.requested_by_me
+                                ? "Request pending"
+                                : "Request this ride"}
                         </Button>
                       </div>
                     )}

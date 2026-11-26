@@ -114,7 +114,7 @@ export function isMissingDriverOfferSchema(error: unknown) {
     (databaseError.code === "PGRST205" ||
       databaseError.code === "PGRST204" ||
       databaseError.code === "42703") &&
-    /driver_offers|vehicle_snapshot|available_places|offered_price|from_lat|from_lon|to_lat|to_lon/i.test(
+    /driver_offers|driver_offer_requests|vehicle_snapshot|available_places|offered_price|from_lat|from_lon|to_lat|to_lon/i.test(
       databaseError.message || ""
     )
   );

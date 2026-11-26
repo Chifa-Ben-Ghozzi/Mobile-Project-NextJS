@@ -93,6 +93,9 @@ const notificationTypes = {
   contactRequest: "Contact Requests",
   contactAccepted: "Accepted Contacts",
   newRide: "New Rides",
+  offerRequest: "Ride Offer Requests",
+  offerRequestAccepted: "Accepted Ride Requests",
+  offerRequestRejected: "Rejected Ride Requests",
   rideAccepted: "Accepted Rides",
   rideCancelled: "Cancelled Rides",
   rideCompleted: "Completed Rides",
@@ -109,6 +112,12 @@ const getNotificationColor = (type: string) => {
       return "bg-zinc-50/60 dark:bg-zinc-950/20 border-zinc-200/70 dark:border-zinc-800/40";
     case "newRide":
       return "bg-amber-50/60 dark:bg-amber-950/20 border-amber-200/70 dark:border-amber-800/40";
+    case "offerRequest":
+      return "bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-200/70 dark:border-emerald-800/40";
+    case "offerRequestAccepted":
+      return "bg-indigo-50/60 dark:bg-indigo-950/20 border-indigo-200/70 dark:border-indigo-800/40";
+    case "offerRequestRejected":
+      return "bg-rose-50/60 dark:bg-rose-950/20 border-rose-200/70 dark:border-rose-800/40";
     case "rideAccepted":
       return "bg-indigo-50/60 dark:bg-indigo-950/20 border-indigo-200/70 dark:border-indigo-800/40";
     case "rideCancelled":
@@ -133,6 +142,12 @@ const getNotificationIcon = (type: string) => {
       return <CheckCheck className="h-5 w-5 text-zinc-500" />;
     case "newRide":
       return <Car className="h-5 w-5 text-amber-500" />;
+    case "offerRequest":
+      return <Car className="h-5 w-5 text-emerald-500" />;
+    case "offerRequestAccepted":
+      return <CheckCircle className="h-5 w-5 text-indigo-500" />;
+    case "offerRequestRejected":
+      return <X className="h-5 w-5 text-rose-500" />;
     case "rideAccepted":
       return <CheckCircle className="h-5 w-5 text-indigo-500" />;
     case "rideCancelled":
