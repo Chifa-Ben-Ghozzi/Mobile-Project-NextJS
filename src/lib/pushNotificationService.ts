@@ -1,5 +1,9 @@
 
-import webpush from "web-push";
+import {
+  sendNotification,
+  setVapidDetails,
+  type PushSubscription,
+} from "web-push";
 
 import { database } from "./db";
 
@@ -14,7 +18,7 @@ function configureVapidDetails() {
     throw new Error("Web push is not configured. Set both VAPID keys in the environment.");
   }
 
-  webpush.setVapidDetails(
+  setVapidDetails(
     "mailto:rideshareapp.mail@gmail.com",
     publicKey,
     privateKey
@@ -23,12 +27,12 @@ function configureVapidDetails() {
 }
 
 export async function sendPushNotification(
-  subscription: webpush.PushSubscription,
+  subscription: PushSubscription,
   payload: string
 ): Promise<boolean> {
   try {
     configureVapidDetails();
-    await webpush.sendNotification(subscription, payload);
+    await sendNotification(subscription, payload);
     return true;
   } catch (error: unknown) {
     if (
