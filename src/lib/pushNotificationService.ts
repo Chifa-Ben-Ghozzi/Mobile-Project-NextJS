@@ -1,9 +1,8 @@
 
-import {
-  sendNotification,
-  setVapidDetails,
-  type PushSubscription,
-} from "web-push";
+import webpush from "web-push";
+import type { PushSubscription } from "web-push";
+
+const { sendNotification, setVapidDetails } = webpush;
 
 import { database } from "./db";
 
