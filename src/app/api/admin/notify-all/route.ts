@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { database } from "@/lib/db";
 import { sendPushNotification } from "@/lib/pushNotificationService";
 
+export const runtime = "nodejs";
+
 export async function POST(request: Request) {
   const { title, body } = await request.json();
 
