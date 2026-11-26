@@ -3,17 +3,23 @@ import webpush from "web-push";
 
 import { database } from "./db";
 
-const vapidKeys = {
-  publicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-  privateKey: process.env.VAPID_PRIVATE_KEY,
-};
+let vapidDetailsConfigured = false;
 
-if (vapidKeys.publicKey && vapidKeys.privateKey) {
+function configureVapidDetails() {
+  if (vapidDetailsConfigured) return;
+
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  if (!publicKey || !privateKey) {
+    throw new Error("Web push is not configured. Set both VAPID keys in the environment.");
+  }
+
   webpush.setVapidDetails(
     "mailto:rideshareapp.mail@gmail.com",
-    vapidKeys.publicKey,
-    vapidKeys.privateKey
+    publicKey,
+    privateKey
   );
+  vapidDetailsConfigured = true;
 }
 
 export async function sendPushNotification(
@@ -21,6 +27,7 @@ export async function sendPushNotification(
   payload: string
 ): Promise<boolean> {
   try {
+    configureVapidDetails();
     await webpush.sendNotification(subscription, payload);
     return true;
   } catch (error: unknown) {
