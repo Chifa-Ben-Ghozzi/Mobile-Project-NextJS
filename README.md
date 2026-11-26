@@ -61,8 +61,8 @@ RideShare is a modern, user-friendly web application that facilitates ride-shari
 1. Clone the repository:
 
    ```
-   git clone https://github.com/FelixRobb/ride-share-app.git
-   cd ride-share-app
+   git clone https://github.com/Chifa-Ben-Ghozzi/Mobile-Project-NextJS.git
+   cd Mobile-Project-NextJS
    ```
 
 2. Install dependencies:
@@ -168,6 +168,6 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Contact
 
-Félix Robb - [rideshareapp.mail@gmail.com](rideshareapp.mail@gmail.com)
+Chifa Ben Ghozzi - [chifabenghozzi906@gmail.com](chifabenghozzi906@gmail.com)
 
-Github Project Link: [https://github.com/FelixRobb/ride-share-app/](https://github.com/FelixRobb/ride-share-app/)
+Github Project Link: [https://github.com/Chifa-Ben-Ghozzi/Mobile-Project-NextJS](https://github.com/Chifa-Ben-Ghozzi/Mobile-Project-NextJS)
